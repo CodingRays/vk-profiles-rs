@@ -6,7 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ash = "0.37.0"
+# The profiles library requires the vulkan loader to be statically linked
+ash = {version="0.37.0", features=["linked", "debug"]}
 
 [build-dependencies]
 cmake = "0.1.48"

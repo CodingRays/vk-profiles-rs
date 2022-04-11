@@ -99,6 +99,8 @@ pub mod vp {
             pub fn vpGetProfileFallbacks(pProfile: *const super::ProfileProperties, pPropertyCount: *mut u32, pProperties: *mut super::ProfileProperties) -> vk::Result;
 
             pub fn vpGetInstanceProfileSupport(pLayerName: *const std::os::raw::c_char, pProfile: *const super::ProfileProperties, pSupported: *mut vk::Bool32) -> vk::Result;
+
+            pub fn vpCreateInstance(pCreateInfo: *const super::InstanceCreateInfo, pAllocator: *const vk::AllocationCallbacks, p_instance: *mut vk::Instance) -> vk::Result;
         }
     }
 }
@@ -112,6 +114,17 @@ mod tests {
             let profiles = crate::vp::get_profiles().unwrap();
             assert!(profiles.len() > 0);
             let _test = crate::vp::get_profile_fallbacks(&profiles[0]).unwrap();
+
+            let app_info = ash::vk::ApplicationInfo::builder();
+
+            let info = ash::vk::InstanceCreateInfo::builder()
+                .application_info(&app_info);
+
+            crate::vp::sys::vpCreateInstance(&crate::vp::InstanceCreateInfo{
+                p_create_info: &*info,
+                p_profile: &profiles[0],
+                flags: crate::vp::InstanceCreateFlagBits::empty(),
+            }, std::ptr::null(), std::ptr::null_mut()).result().unwrap();
             //print!("Result: {}", crate::vp::get_instance_profile_support(&profiles[0]).unwrap());
         }
     }
