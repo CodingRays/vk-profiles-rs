@@ -37,6 +37,7 @@ extern crate link_cplusplus;
 
 mod prelude;
 #[cfg(feature = "debug")]
+#[doc(hidden)]
 pub mod enum_debugs;
 pub mod vp;
 
