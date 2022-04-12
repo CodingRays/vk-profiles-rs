@@ -29,6 +29,23 @@ pub mod vp {
         pub p_profile: *const ProfileProperties,
         pub flags: InstanceCreateFlagBits,
     }
+    impl ::std::default::Default for InstanceCreateInfo {
+        fn default() -> Self {
+            Self {
+                p_create_info: std::ptr::null(),
+                p_profile: std::ptr::null(),
+                flags: InstanceCreateFlagBits::default(),
+            }
+        }
+    }
+    impl InstanceCreateInfo {
+        pub fn builder<'a>() -> InstanceCreateInfoBuilder<'a> {
+            InstanceCreateInfoBuilder {
+                inner: Self::default(),
+                marker: ::std::marker::PhantomData,
+            }
+        }
+    }
 
     #[repr(transparent)]
     pub struct InstanceCreateInfoBuilder<'a> {
@@ -91,6 +108,23 @@ pub mod vp {
         pub p_create_info: *const vk::DeviceCreateInfo,
         pub p_profile: *const ProfileProperties,
         pub flags: DeviceCreateFlagBits,
+    }
+    impl ::std::default::Default for DeviceCreateInfo {
+        fn default() -> Self {
+            Self {
+                p_create_info: std::ptr::null(),
+                p_profile: std::ptr::null(),
+                flags: DeviceCreateFlagBits::default(),
+            }
+        }
+    }
+    impl DeviceCreateInfo {
+        pub fn builder<'a>() -> DeviceCreateInfoBuilder<'a> {
+            DeviceCreateInfoBuilder {
+                inner: Self::default(),
+                marker: ::std::marker::PhantomData,
+            }
+        }
     }
 
     #[repr(transparent)]
