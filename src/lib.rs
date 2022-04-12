@@ -140,6 +140,24 @@ pub mod vp {
         })
     }
 
+    // TODO: Queue family properties requires a vector of initialized pNext chains. How do we deal with this?
+
+    pub unsafe fn get_profile_formats(profile: &ProfileProperties) -> VkResult<Vec<vk::Format>> {
+        read_into_uninitialized_vector(|count, data| {
+            sys::vpGetProfileFormats(profile, count, data)
+        })
+    }
+
+    pub unsafe fn get_profile_format_properties(profile: &ProfileProperties, format: vk::Format, p_next: &mut vk::BaseOutStructure) {
+        sys::vpGetProfileFormatProperties(profile, format, p_next as *mut _ as *mut c_void);
+    }
+
+    pub unsafe fn get_profile_format_structure_types(profile: &ProfileProperties) -> VkResult<Vec<vk::StructureType>> {
+        read_into_uninitialized_vector(|count, data| {
+            sys::vpGetProfileFormatStructureTypes(profile, count, data)
+        })
+    }
+
     pub mod sys {
         use super::*;
 
