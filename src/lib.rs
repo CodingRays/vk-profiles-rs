@@ -398,8 +398,26 @@ mod tests {
     use crate::vp;
     use ash::vk;
 
+    fn create_instance() -> (vp::ProfileProperties, ash::Instance) {
+        let profile = unsafe { vp::get_profiles().unwrap() }.into_iter().find(|profile| {
+            unsafe { vp::get_instance_profile_support(profile).unwrap() }
+        }).unwrap();
+
+        let entry = unsafe { ash::Entry::load().unwrap() };
+
+        let instance_info = vk::InstanceCreateInfo::builder();
+        
+        let vp_instance_info = vp::InstanceCreateInfo::builder()
+            .create_info(&instance_info)
+            .profile(&profile);
+
+        let instance = unsafe { vp::create_instance(&entry, &vp_instance_info, None).unwrap() };
+
+        (profile, instance)
+    }
+
     #[test]
-    fn enumerate_profiles() {
+    fn test_enumerate_profiles() {
         let profiles = unsafe {
             vp::get_profiles().unwrap()
         };
@@ -410,7 +428,7 @@ mod tests {
     }
 
     #[test]
-    fn enumerate_profile_details() {
+    fn test_enumerate_profile_details() {
         let profile = unsafe { vp::get_profiles().unwrap() }[0];
 
         unsafe { vp::get_profile_instance_extension_properties(&profile).unwrap() };
@@ -423,40 +441,35 @@ mod tests {
     }
 
     #[test]
-    fn create_instance() {
-        let profiles = unsafe { vp::get_profiles().unwrap() };
-
-        let profile = profiles.iter().find(|profile| {
-            unsafe { vp::get_instance_profile_support(profile).unwrap() }
-        }).unwrap();
-
-        let entry = unsafe { ash::Entry::load().unwrap() };
-    
-        let name = std::ffi::CString::new("VkProfilesRsTest").unwrap();
-        let application_info = vk::ApplicationInfo::builder()
-            .application_name(name.as_c_str())
-            .engine_name(name.as_c_str())
-            .api_version(profile.spec_version);
-
-        let instance_info = vk::InstanceCreateInfo::builder()
-            .application_info(&application_info);
-        
-        let vp_instance_info = vp::InstanceCreateInfo::builder()
-            .create_info(&instance_info)
-            .profile(&profile);
-
-        let instance = unsafe { vp::create_instance(&entry, &vp_instance_info, None).unwrap() };
+    fn test_create_instance() {
+        let (_, instance) = create_instance();
 
         unsafe { instance.destroy_instance(None) };
     }
 
     #[test]
-    fn it_works() {
-        unsafe {
-            let profiles = crate::vp::get_profiles().unwrap();
-            assert!(profiles.len() > 0);
-            let _test = crate::vp::get_profile_fallbacks(&profiles[0]).unwrap();
-            print!("Result: {}", crate::vp::get_instance_profile_support(&profiles[0]).unwrap());
-        }
+    fn test_create_device() {
+        let (profile, instance) = create_instance();
+
+        let physical_device = unsafe { instance.enumerate_physical_devices().unwrap() }.into_iter().find(|device| {
+            unsafe { vp::get_physical_device_profile_support(&instance, *device, &profile).expect("Error queueing physical device support") }
+        }).expect("Failed to find suitable physical device");
+
+        let queue_info = vk::DeviceQueueCreateInfo::builder()
+            .queue_family_index(0)
+            .queue_priorities(&[1.0]);
+
+        let device_info = vk::DeviceCreateInfo::builder()
+            .queue_create_infos(std::slice::from_ref(&queue_info));
+
+        let vp_device_info = vp::DeviceCreateInfo::builder()
+            .create_info(&device_info)
+            .profile(&profile);
+
+        let device = unsafe { vp::create_device(&instance, physical_device, &vp_device_info, None).expect("Failed to create device") };
+
+        unsafe { device.destroy_device(None) };
+
+        unsafe { instance.destroy_instance(None) };
     }
 }
