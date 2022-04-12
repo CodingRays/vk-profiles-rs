@@ -1,3 +1,7 @@
+//! The vulkan profiles structures and function definitions.
+//! 
+//! See the vulkan profiles documentation for more details <https://vulkan.lunarg.com/doc/sdk/1.3.204.1/windows/profiles_api_library.html>
+
 use crate::prelude::*;
 
 use ash::prelude::VkResult;
@@ -255,16 +259,19 @@ impl<'a> DeviceCreateInfoBuilder<'a> {
     }
 }
 
+/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profiles>
 pub unsafe fn get_profiles() -> VkResult<Vec<ProfileProperties>> {
     read_into_uninitialized_vector(|count, data| sys::vpGetProfiles(count, data))
 }
 
+/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-fallbacks>
 pub unsafe fn get_profile_fallbacks(
     profile: &ProfileProperties,
 ) -> VkResult<Vec<ProfileProperties>> {
     read_into_uninitialized_vector(|count, data| sys::vpGetProfileFallbacks(profile, count, data))
 }
 
+/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-check-instance-level-support>
 pub unsafe fn get_instance_profile_support(
     layer: Option<&::std::ffi::CStr>,
     profile: &ProfileProperties,
@@ -283,6 +290,7 @@ pub unsafe fn get_instance_profile_support(
     }
 }
 
+/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-create-instance-with-profile>
 pub unsafe fn create_instance(
     entry: &ash::Entry,
     create_info: &InstanceCreateInfo,
@@ -298,6 +306,7 @@ pub unsafe fn create_instance(
     Ok(ash::Instance::load(entry.static_fn(), instance))
 }
 
+/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-check-device-level-support>
 pub unsafe fn get_physical_device_profile_support(
     instance: &ash::Instance,
     physical_device: vk::PhysicalDevice,
@@ -318,6 +327,7 @@ pub unsafe fn get_physical_device_profile_support(
     }
 }
 
+/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-create-device-with-profile>
 pub unsafe fn create_device(
     instance: &ash::Instance,
     physical_device: vk::PhysicalDevice,
@@ -334,6 +344,7 @@ pub unsafe fn create_device(
     Ok(ash::Device::load(instance.fp_v1_0(), device))
 }
 
+/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-instance-extensions>
 pub unsafe fn get_profile_instance_extension_properties(
     profile: &ProfileProperties,
 ) -> VkResult<Vec<vk::ExtensionProperties>> {
@@ -342,6 +353,7 @@ pub unsafe fn get_profile_instance_extension_properties(
     })
 }
 
+/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-device-extensions>
 pub unsafe fn get_profile_device_extension_properties(
     profile: &ProfileProperties,
 ) -> VkResult<Vec<vk::ExtensionProperties>> {
@@ -350,10 +362,12 @@ pub unsafe fn get_profile_device_extension_properties(
     })
 }
 
+/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-features>
 pub unsafe fn get_profile_features(profile: &ProfileProperties, p_next: &mut vk::BaseOutStructure) {
     sys::vpGetProfileFeatures(profile, p_next as *mut _ as *mut c_void);
 }
 
+/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-features>
 pub unsafe fn get_profile_feature_structure_types(
     profile: &ProfileProperties,
 ) -> VkResult<Vec<vk::StructureType>> {
@@ -362,6 +376,7 @@ pub unsafe fn get_profile_feature_structure_types(
     })
 }
 
+/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-device-properties>
 pub unsafe fn get_profile_properties(
     profile: &ProfileProperties,
     p_next: &mut vk::BaseOutStructure,
@@ -369,6 +384,7 @@ pub unsafe fn get_profile_properties(
     sys::vpGetProfileProperties(profile, p_next as *mut _ as *mut c_void);
 }
 
+/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-device-properties>
 pub unsafe fn get_profile_property_structure_types(
     profile: &ProfileProperties,
 ) -> VkResult<Vec<vk::StructureType>> {
@@ -377,6 +393,7 @@ pub unsafe fn get_profile_property_structure_types(
     })
 }
 
+/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-queue-family-properties>
 pub unsafe fn get_profile_queue_family_properties(
     profile: &ProfileProperties,
     properties: &mut [vk::QueueFamilyProperties2],
@@ -388,6 +405,7 @@ pub unsafe fn get_profile_queue_family_properties(
     Ok(())
 }
 
+/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-queue-family-properties>
 pub unsafe fn get_profile_queue_family_structure_types(
     profile: &ProfileProperties,
 ) -> VkResult<Vec<vk::StructureType>> {
@@ -396,10 +414,12 @@ pub unsafe fn get_profile_queue_family_structure_types(
     })
 }
 
+/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-format-properties>
 pub unsafe fn get_profile_formats(profile: &ProfileProperties) -> VkResult<Vec<vk::Format>> {
     read_into_uninitialized_vector(|count, data| sys::vpGetProfileFormats(profile, count, data))
 }
 
+/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-format-properties>
 pub unsafe fn get_profile_format_properties(
     profile: &ProfileProperties,
     format: vk::Format,
@@ -408,6 +428,7 @@ pub unsafe fn get_profile_format_properties(
     sys::vpGetProfileFormatProperties(profile, format, p_next as *mut _ as *mut c_void);
 }
 
+/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-format-properties>
 pub unsafe fn get_profile_format_structure_types(
     profile: &ProfileProperties,
 ) -> VkResult<Vec<vk::StructureType>> {
@@ -417,6 +438,11 @@ pub unsafe fn get_profile_format_structure_types(
 }
 
 pub mod sys {
+    //! External function definitions.
+    //! 
+    //! Usually these should not be accessed directly. All capabilites should be exposed
+    //! by the functions in the [crate::vp] module.
+
     use super::*;
 
     #[link(name = "vkprofiles", kind = "static")]
