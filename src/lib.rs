@@ -5,6 +5,42 @@ pub mod vp {
     use std::ffi::c_void;
     use ash::vk;
 
+    pub struct AndroidBaseline2021;
+    impl AndroidBaseline2021 {
+        pub const NAME: &'static ::std::ffi::CStr =
+            unsafe { ::std::ffi::CStr::from_bytes_with_nul_unchecked(b"VP_ANDROID_baseline_2021\0") };
+
+        pub const SPEC_VERSION: u32 = 1;
+        pub const MIN_API_VERSION: u32 = vk::make_api_version(0, 1, 0, 68);
+    }
+
+    pub struct KhrRoadmap2022 ;
+    impl KhrRoadmap2022 {
+        pub const NAME: &'static ::std::ffi::CStr =
+            unsafe { ::std::ffi::CStr::from_bytes_with_nul_unchecked(b"VP_KHR_roadmap_2022\0") };
+
+        pub const SPEC_VERSION: u32 = 1;
+        pub const MIN_API_VERSION: u32 = vk::make_api_version(0, 1, 3, 204);
+    }
+
+    pub struct LunargDesktopPortability2021;
+    impl LunargDesktopPortability2021 {
+        pub const NAME: &'static ::std::ffi::CStr =
+            unsafe { ::std::ffi::CStr::from_bytes_with_nul_unchecked(b"VP_LUNARG_desktop_portability_2021\0") };
+
+        pub const SPEC_VERSION: u32 = 1;
+        pub const MIN_API_VERSION: u32 = vk::make_api_version(0, 1, 1, 142);
+    }
+
+    pub struct LunargDesktopPortability2021Subset;
+    impl LunargDesktopPortability2021Subset {
+        pub const NAME: &'static ::std::ffi::CStr =
+            unsafe { ::std::ffi::CStr::from_bytes_with_nul_unchecked(b"VP_LUNARG_desktop_portability_2021_subset\0") };
+
+        pub const SPEC_VERSION: u32 = 1;
+        pub const MIN_API_VERSION: u32 = vk::make_api_version(0, 1, 1, 154);
+    }
+
     #[repr(C)]
     #[derive(Copy, Clone)]
     pub struct ProfileProperties {
@@ -359,6 +395,61 @@ pub mod vp {
 
 #[cfg(test)]
 mod tests {
+    use crate::vp;
+    use ash::vk;
+
+    #[test]
+    fn enumerate_profiles() {
+        let profiles = unsafe {
+            vp::get_profiles().unwrap()
+        };
+
+        assert!(profiles.len() > 0);
+
+        unsafe { vp::get_profile_fallbacks(&profiles[0]).unwrap() };
+    }
+
+    #[test]
+    fn enumerate_profile_details() {
+        let profile = unsafe { vp::get_profiles().unwrap() }[0];
+
+        unsafe { vp::get_profile_instance_extension_properties(&profile).unwrap() };
+        unsafe { vp::get_profile_device_extension_properties(&profile).unwrap() };
+        unsafe { vp::get_profile_feature_structure_types(&profile).unwrap() };
+        unsafe { vp::get_profile_property_structure_types(&profile).unwrap() };
+        unsafe { vp::get_profile_queue_family_structure_types(&profile).unwrap() };
+        unsafe { vp::get_profile_formats(&profile).unwrap() };
+        unsafe { vp::get_profile_property_structure_types(&profile).unwrap() };
+    }
+
+    #[test]
+    fn create_instance() {
+        let profiles = unsafe { vp::get_profiles().unwrap() };
+
+        let profile = profiles.iter().find(|profile| {
+            unsafe { vp::get_instance_profile_support(profile).unwrap() }
+        }).unwrap();
+
+        let entry = unsafe { ash::Entry::load().unwrap() };
+    
+        let name = std::ffi::CString::new("VkProfilesRsTest").unwrap();
+        let application_info = vk::ApplicationInfo::builder()
+            .application_name(name.as_c_str())
+            .engine_name(name.as_c_str())
+            .api_version(profile.spec_version);
+
+        let instance_info = vk::InstanceCreateInfo::builder()
+            .application_info(&application_info);
+        
+        let vp_instance_info = vp::InstanceCreateInfo::builder()
+            .create_info(&instance_info)
+            .profile(&profile);
+
+        let instance = unsafe { vp::create_instance(&entry, &vp_instance_info, None).unwrap() };
+
+        unsafe { instance.destroy_instance(None) };
+    }
+
     #[test]
     fn it_works() {
         unsafe {
