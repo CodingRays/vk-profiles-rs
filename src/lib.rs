@@ -1,14 +1,14 @@
 //! # Vulkan Profiles Library
-//! [https://github.com/KhronosGroup/Vulkan-Profiles]
+//! <https://github.com/KhronosGroup/Vulkan-Profiles>
 //! 
 //! ## Examples
 //! ```
 //! use ash::vk;
 //! use vk_profiles_rs::vp;
 //! 
-//! # fn main() {
+//! # fn main() -> ash::prelude::VkResult<()> {
 //! let profile = vp::LunargDesktopPortability2021::profile_properties();
-//! assert!(unsafe { vp::get_instance_profile_support(None, &profile).unwrap() });
+//! assert!(unsafe { vp::get_instance_profile_support(None, &profile)? });
 //! 
 //! let instance_info = vk::InstanceCreateInfo::builder();
 //! 
@@ -16,16 +16,17 @@
 //!     .create_info(&instance_info)
 //!     .profile(&profile);
 //! 
-//! let entry = unsafe { ash::Entry::load().unwrap() };
+//! let entry = ash::Entry::linked();
 //! 
 //! // The created instance is a standard [ash::Instance]
-//! let instance = unsafe { vp::create_instance(&entry, &vp_instance_info, None).unwrap() };
+//! let instance = unsafe { vp::create_instance(&entry, &vp_instance_info, None)? };
+//! # Ok(())
 //! # }
 //! ```
 //! 
 //! ## Ash design patterns
 //! 
-//! This crate uses ash design patterns wherever possible to allow for seamless usage. Structs
+//! This crate uses [ash](https://github.com/ash-rs/ash) design patterns wherever possible to allow for seamless usage. Structs
 //! have builder versions, enums use the same constructs etc.
 //! 
 //! ## Important notes
@@ -48,7 +49,7 @@ mod tests {
         let profile = vp::LunargDesktopPortability2021::profile_properties();
         assert!(unsafe { vp::get_instance_profile_support(None, &profile).unwrap() });
 
-        let entry = unsafe { ash::Entry::load().unwrap() };
+        let entry = ash::Entry::linked();
 
         let instance_info = vk::InstanceCreateInfo::builder();
         
