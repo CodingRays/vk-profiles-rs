@@ -31,6 +31,46 @@ pub mod vp {
     }
 
     #[repr(transparent)]
+    pub struct InstanceCreateInfoBuilder<'a> {
+        inner: InstanceCreateInfo,
+        marker: ::std::marker::PhantomData<&'a ()>,
+    }
+    impl<'a> ::std::ops::Deref for InstanceCreateInfoBuilder<'a> {
+        type Target = InstanceCreateInfo;
+        fn deref(&self) -> &Self::Target {
+            &self.inner
+        }
+    }
+    impl<'a> ::std::ops::DerefMut for InstanceCreateInfoBuilder<'a> {
+        fn deref_mut(&mut self) -> &mut Self::Target {
+            &mut self.inner
+        }
+    }
+    impl<'a> InstanceCreateInfoBuilder<'a> {
+        pub fn create_info(mut self, create_info: &'a vk::InstanceCreateInfo) -> Self {
+            self.inner.p_create_info = create_info;
+            self
+        }
+
+        pub fn profile(mut self, profile: &'a ProfileProperties) -> Self {
+            self.inner.p_profile = profile;
+            self
+        }
+
+        pub fn flags(mut self, flags: InstanceCreateFlagBits) -> Self {
+            self.inner.flags = flags;
+            self
+        }
+
+        /// Calling build will **discard** all the lifetime information. Only call this if
+        /// necessary! Builders implement `Deref` targeting their corresponding Vulkan-Profiles struct,
+        /// so references to builders can be passed directly to Vulkan-Profiles functions.
+        pub fn build(self) -> InstanceCreateInfo {
+            self.inner
+        }
+    }
+
+    #[repr(transparent)]
     #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct DeviceCreateFlagBits(pub(crate) vk::Flags);
     ash::vk_bitflags_wrapped!(DeviceCreateFlagBits, vk::Flags);
@@ -51,6 +91,46 @@ pub mod vp {
         pub p_create_info: *const vk::DeviceCreateInfo,
         pub p_profile: *const ProfileProperties,
         pub flags: DeviceCreateFlagBits,
+    }
+
+    #[repr(transparent)]
+    pub struct DeviceCreateInfoBuilder<'a> {
+        inner: DeviceCreateInfo,
+        marker: ::std::marker::PhantomData<&'a ()>,
+    }
+    impl<'a> ::std::ops::Deref for DeviceCreateInfoBuilder<'a> {
+        type Target = DeviceCreateInfo;
+        fn deref(&self) -> &Self::Target {
+            &self.inner
+        }
+    }
+    impl<'a> ::std::ops::DerefMut for DeviceCreateInfoBuilder<'a> {
+        fn deref_mut(&mut self) -> &mut Self::Target {
+            &mut self.inner
+        }
+    }
+    impl<'a> DeviceCreateInfoBuilder<'a> {
+        pub fn create_info(mut self, create_info: &'a vk::DeviceCreateInfo) -> Self {
+            self.inner.p_create_info = create_info;
+            self
+        }
+
+        pub fn profile(mut self, profile: &'a ProfileProperties) -> Self {
+            self.inner.p_profile = profile;
+            self
+        }
+
+        pub fn flags(mut self, flags: DeviceCreateFlagBits) -> Self {
+            self.inner.flags = flags;
+            self
+        }
+
+        /// Calling build will **discard** all the lifetime information. Only call this if
+        /// necessary! Builders implement `Deref` targeting their corresponding Vulkan-Profiles struct,
+        /// so references to builders can be passed directly to Vulkan-Profiles functions.
+        pub fn build(self) -> DeviceCreateInfo {
+            self.inner
+        }
     }
 
     pub unsafe fn get_profiles() -> VkResult<Vec<ProfileProperties>> {
