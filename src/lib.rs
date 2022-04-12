@@ -2,6 +2,7 @@ extern crate link_cplusplus;
 
 pub mod vp {
     use ash::prelude::VkResult;
+    use std::ffi::c_void;
     use ash::vk;
 
     #[repr(C)]
@@ -53,31 +54,15 @@ pub mod vp {
     }
 
     pub unsafe fn get_profiles() -> VkResult<Vec<ProfileProperties>> {
-        loop { // Basically a copy of how ash does it
-            let mut count: u32 = 0;
-            sys::vpGetProfiles(&mut count, std::ptr::null_mut()).result()?;
-            
-            let mut data = Vec::with_capacity(count as usize);
-            let err_code = sys::vpGetProfiles(&mut count, data.as_mut_ptr());
-            if err_code != vk::Result::INCOMPLETE {
-                data.set_len(count as usize);
-                break err_code.result_with_success(data);
-            }
-        }
+        read_into_uninitialized_vector(|count, data| {
+            sys::vpGetProfiles(count, data)
+        })
     }
 
     pub unsafe fn get_profile_fallbacks(profile: &ProfileProperties) -> VkResult<Vec<ProfileProperties>> {
-        loop { // Basically a copy of how ash does it
-            let mut count: u32 = 0;
-            sys::vpGetProfileFallbacks(profile, &mut count, std::ptr::null_mut()).result()?;
-            
-            let mut data = Vec::with_capacity(count as usize);
-            let err_code = sys::vpGetProfileFallbacks(profile, &mut count, data.as_mut_ptr());
-            if err_code != vk::Result::INCOMPLETE {
-                data.set_len(count as usize);
-                break err_code.result_with_success(data);
-            }
-        }
+        read_into_uninitialized_vector(|count, data| {
+            sys::vpGetProfileFallbacks(profile, count, data)
+        })
     }
 
     // TODO add the layer parameter
@@ -123,22 +108,146 @@ pub mod vp {
         Ok(ash::Device::load(instance.fp_v1_0(), device))
     }
 
+    pub unsafe fn get_profile_instance_extension_properties(profile: &ProfileProperties) -> VkResult<Vec<vk::ExtensionProperties>> {
+        read_into_uninitialized_vector(|count, data| {
+            sys::vpGetProfileInstanceExtensionProperties(profile, count, data)
+        })
+    }
+
+    pub unsafe fn get_profile_device_extension_properties(profile: &ProfileProperties) -> VkResult<Vec<vk::ExtensionProperties>> {
+        read_into_uninitialized_vector(|count, data| {
+            sys::vpGetProfileDeviceExtensionProperties(profile, count, data)
+        })
+    }
+
+    pub unsafe fn get_profile_features(profile: &ProfileProperties, p_next: &mut vk::BaseOutStructure) {
+        sys::vpGetProfileFeatures(profile, p_next as *mut _ as *mut c_void);
+    }
+
+    pub unsafe fn get_profile_feature_structure_types(profile: &ProfileProperties) -> VkResult<Vec<vk::StructureType>> {
+        read_into_uninitialized_vector(|count, data| {
+            sys::vpGetProfileFeatureStructureTypes(profile, count, data)
+        })
+    }
+
+    pub unsafe fn get_profile_properties(profile: &ProfileProperties, p_next: &mut vk::BaseOutStructure) {
+        sys::vpGetProfileProperties(profile, p_next as *mut _ as *mut c_void);
+    }
+
+    pub unsafe fn get_profile_property_structure_types(profile: &ProfileProperties) -> VkResult<Vec<vk::StructureType>> {
+        read_into_uninitialized_vector(|count, data| {
+            sys::vpGetProfilePropertyStructureTypes(profile, count, data)
+        })
+    }
+
     pub mod sys {
-        use ash::vk;
+        use super::*;
 
         #[link(name="vkprofiles", kind="static")]
         extern {
-            pub fn vpGetProfiles(pPropertyCount: *mut u32, pProperties: *mut super::ProfileProperties) -> vk::Result;
+            pub fn vpGetProfiles(pPropertyCount: *mut u32, pProperties: *mut ProfileProperties) -> vk::Result;
 
-            pub fn vpGetProfileFallbacks(pProfile: *const super::ProfileProperties, pPropertyCount: *mut u32, pProperties: *mut super::ProfileProperties) -> vk::Result;
+            pub fn vpGetProfileFallbacks(pProfile: *const ProfileProperties, pPropertyCount: *mut u32, pProperties: *mut ProfileProperties) -> vk::Result;
 
-            pub fn vpGetInstanceProfileSupport(pLayerName: *const std::os::raw::c_char, pProfile: *const super::ProfileProperties, pSupported: *mut vk::Bool32) -> vk::Result;
+            pub fn vpGetInstanceProfileSupport(pLayerName: *const std::os::raw::c_char, pProfile: *const ProfileProperties, pSupported: *mut vk::Bool32) -> vk::Result;
 
-            pub fn vpCreateInstance(pCreateInfo: *const super::InstanceCreateInfo, pAllocator: *const vk::AllocationCallbacks, p_instance: *mut vk::Instance) -> vk::Result;
+            pub fn vpCreateInstance(pCreateInfo: *const InstanceCreateInfo, pAllocator: *const vk::AllocationCallbacks, p_instance: *mut vk::Instance) -> vk::Result;
 
-            pub fn vpGetPhysicalDeviceProfileSupport(instance: ash::vk::Instance, physicalDevice: ash::vk::PhysicalDevice, pProfile: *const super::ProfileProperties, supported: *mut vk::Bool32) -> vk::Result;
+            pub fn vpGetPhysicalDeviceProfileSupport(instance: ash::vk::Instance, physicalDevice: ash::vk::PhysicalDevice, pProfile: *const ProfileProperties, supported: *mut vk::Bool32) -> vk::Result;
 
-            pub fn vpCreateDevice(physicalDevice: ash::vk::PhysicalDevice, pCreateInfo: *const super::DeviceCreateInfo, pAllocator: *const vk::AllocationCallbacks, pDevice: *mut vk::Device) -> vk::Result;
+            pub fn vpCreateDevice(physicalDevice: ash::vk::PhysicalDevice, pCreateInfo: *const DeviceCreateInfo, pAllocator: *const vk::AllocationCallbacks, pDevice: *mut vk::Device) -> vk::Result;
+
+            pub fn vpGetProfileInstanceExtensionProperties(pProfile: *const ProfileProperties, pPropertyCount: *mut u32, pProperties: *mut vk::ExtensionProperties) -> vk::Result;
+
+            pub fn vpGetProfileDeviceExtensionProperties(pProfile: *const ProfileProperties, pPropertyCount: *mut u32, pProperties: *mut vk::ExtensionProperties) -> vk::Result;
+
+            pub fn vpGetProfileFeatures(pProfile: *const ProfileProperties, pNext: *mut c_void);
+
+            pub fn vpGetProfileFeatureStructureTypes(pProfile: *const ProfileProperties, pStructureTypeCount: *mut u32, pStructureTypes: *mut vk::StructureType) -> vk::Result;
+
+            pub fn vpGetProfileProperties(pProfile: *const ProfileProperties, pNext: *mut c_void);
+
+            pub fn vpGetProfilePropertyStructureTypes(pProfile: *const ProfileProperties, pStructureTypeCount: *mut u32, pStructureTypes: *mut vk::StructureType) -> vk::Result;
+
+            pub fn vpGetProfileQueueFamilyProperties(pProfile: *const ProfileProperties, pPropertyCount: *mut u32, pProperties: *mut vk::QueueFamilyProperties2) -> vk::Result;
+
+            pub fn vpGetProfileQueueFamilyStructureTypes(pProfile: *const ProfileProperties, pStructureTypeCount: *mut u32, pStructureTypes: *mut vk::StructureType) -> vk::Result;
+
+            pub fn vpGetProfileFormats(pProfile: *const ProfileProperties, pFormatCount: *mut u32, pFormats: *mut vk::Format) -> vk::Result;
+
+            pub fn vpGetProfileFormatProperties(pProfile: *const ProfileProperties, format: vk::Format, pNext: *mut c_void);
+
+            pub fn vpGetProfileFormatStructureTypes(pProfile: *const ProfileProperties, pStructureTypeCount: *mut u32, pStructureTypes: *mut vk::StructureType) -> vk::Result;
+        }
+    }
+
+    /// This is a direct copy from ash::prelude (because it is not public).
+    ///
+    /// Repeatedly calls `f` until it does not return [`vk::Result::INCOMPLETE`] anymore,
+    /// ensuring all available data has been read into the vector.
+    ///
+    /// See for example [`vkEnumerateInstanceExtensionProperties`]: the number of available
+    /// items may change between calls; [`vk::Result::INCOMPLETE`] is returned when the count
+    /// increased (and the vector is not large enough after querying the initial size),
+    /// requiring Ash to try again.
+    ///
+    /// [`vkEnumerateInstanceExtensionProperties`]: https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/vkEnumerateInstanceExtensionProperties.html
+    pub(crate) unsafe fn read_into_uninitialized_vector<N: Copy + Default + TryInto<usize>, T>(
+        f: impl Fn(&mut N, *mut T) -> vk::Result,
+    ) -> VkResult<Vec<T>>
+    where
+        <N as TryInto<usize>>::Error: std::fmt::Debug,
+    {
+        loop {
+            let mut count = N::default();
+            f(&mut count, std::ptr::null_mut()).result()?;
+            let mut data =
+                Vec::with_capacity(count.try_into().expect("`N` failed to convert to `usize`"));
+
+            let err_code = f(&mut count, data.as_mut_ptr());
+            if err_code != vk::Result::INCOMPLETE {
+                data.set_len(count.try_into().expect("`N` failed to convert to `usize`"));
+                break err_code.result_with_success(data);
+            }
+        }
+    }
+    
+    /// This is a direct copy from ash::prelude (because it is not public).
+    ///
+    /// Repeatedly calls `f` until it does not return [`vk::Result::INCOMPLETE`] anymore,
+    /// ensuring all available data has been read into the vector.
+    ///
+    /// Items in the target vector are [`default()`][`Default::default()`]-initialized which
+    /// is required for [`vk::BaseOutStructure`]-like structs where [`vk::BaseOutStructure::s_type`]
+    /// needs to be a valid type and [`vk::BaseOutStructure::p_next`] a valid or
+    /// [`null`][`std::ptr::null_mut()`] pointer.
+    ///
+    /// See for example [`vkEnumerateInstanceExtensionProperties`]: the number of available
+    /// items may change between calls; [`vk::Result::INCOMPLETE`] is returned when the count
+    /// increased (and the vector is not large enough after querying the initial size),
+    /// requiring Ash to try again.
+    ///
+    /// [`vkEnumerateInstanceExtensionProperties`]: https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/vkEnumerateInstanceExtensionProperties.html
+    pub(crate) unsafe fn read_into_defaulted_vector<
+        N: Copy + Default + TryInto<usize>,
+        T: Default + Clone,
+    >(
+        f: impl Fn(&mut N, *mut T) -> vk::Result,
+    ) -> VkResult<Vec<T>>
+    where
+        <N as TryInto<usize>>::Error: std::fmt::Debug,
+    {
+        loop {
+            let mut count = N::default();
+            f(&mut count, std::ptr::null_mut()).result()?;
+            let mut data =
+                vec![Default::default(); count.try_into().expect("`N` failed to convert to `usize`")];
+
+            let err_code = f(&mut count, data.as_mut_ptr());
+            if err_code != vk::Result::INCOMPLETE {
+                data.set_len(count.try_into().expect("`N` failed to convert to `usize`"));
+                break err_code.result_with_success(data);
+            }
         }
     }
 }
