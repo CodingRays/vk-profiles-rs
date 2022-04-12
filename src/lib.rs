@@ -12,6 +12,13 @@ pub mod vp {
 
         pub const SPEC_VERSION: u32 = 1;
         pub const MIN_API_VERSION: u32 = vk::make_api_version(0, 1, 0, 68);
+
+        pub fn profile_properties() -> ProfileProperties {
+            ProfileProperties {
+                profile_name: c_char_array_from_cstr(Self::NAME).unwrap(),
+                spec_version: Self::MIN_API_VERSION,
+            }
+        }
     }
 
     pub struct KhrRoadmap2022 ;
@@ -21,6 +28,13 @@ pub mod vp {
 
         pub const SPEC_VERSION: u32 = 1;
         pub const MIN_API_VERSION: u32 = vk::make_api_version(0, 1, 3, 204);
+
+        pub fn profile_properties() -> ProfileProperties {
+            ProfileProperties {
+                profile_name: c_char_array_from_cstr(Self::NAME).unwrap(),
+                spec_version: Self::MIN_API_VERSION,
+            }
+        }
     }
 
     pub struct LunargDesktopPortability2021;
@@ -30,6 +44,13 @@ pub mod vp {
 
         pub const SPEC_VERSION: u32 = 1;
         pub const MIN_API_VERSION: u32 = vk::make_api_version(0, 1, 1, 142);
+
+        pub fn profile_properties() -> ProfileProperties {
+            ProfileProperties {
+                profile_name: c_char_array_from_cstr(Self::NAME).unwrap(),
+                spec_version: Self::MIN_API_VERSION,
+            }
+        }
     }
 
     pub struct LunargDesktopPortability2021Subset;
@@ -39,6 +60,13 @@ pub mod vp {
 
         pub const SPEC_VERSION: u32 = 1;
         pub const MIN_API_VERSION: u32 = vk::make_api_version(0, 1, 1, 154);
+
+        pub fn profile_properties() -> ProfileProperties {
+            ProfileProperties {
+                profile_name: c_char_array_from_cstr(Self::NAME).unwrap(),
+                spec_version: Self::MIN_API_VERSION,
+            }
+        }
     }
 
     #[repr(C)]
@@ -46,6 +74,24 @@ pub mod vp {
     pub struct ProfileProperties {
         pub profile_name: [std::os::raw::c_char; 256],
         pub spec_version: u32,
+    }
+    impl std::fmt::Debug for ProfileProperties {
+        fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+             fmt.debug_struct("ProfileProperties")
+                .field("profile_name", &unsafe {
+                    ::std::ffi::CStr::from_ptr(self.profile_name.as_ptr())
+                })
+                .field("spec_version", &self.spec_version)
+                .finish()
+        }
+    }
+    impl ::std::default::Default for ProfileProperties {
+        fn default() -> Self {
+            Self {
+                profile_name: unsafe { ::std::mem::zeroed() },
+                spec_version: u32::default(),
+            }
+        }
     }
 
     #[repr(transparent)]
@@ -390,6 +436,22 @@ pub mod vp {
             }
         }
     }
+
+    pub(crate) fn c_char_array_from_cstr<const N: usize>(data: &::std::ffi::CStr) -> Option<[::std::os::raw::c_char; N]> {
+        let mut result: [::std::os::raw::c_char; N] = unsafe { ::std::mem::zeroed() }; // Default not implemented for arbitrary length
+
+        // Yes this is stupid but rust FFI is absolutely useless
+        let data = data.to_bytes_with_nul();
+        if data.len() > N {
+            return None;
+        }
+
+        for (i, c) in data.iter().enumerate() {
+            result[i] = *c as ::std::os::raw::c_char;
+        }
+
+        Some(result)
+    }
 }
 
 
@@ -402,6 +464,7 @@ mod tests {
         let profile = unsafe { vp::get_profiles().unwrap() }.into_iter().find(|profile| {
             unsafe { vp::get_instance_profile_support(profile).unwrap() }
         }).unwrap();
+        println!("Found supported profile: {:?}", profile);
 
         let entry = unsafe { ash::Entry::load().unwrap() };
 
