@@ -16,7 +16,7 @@ pub mod vp {
         pub fn profile_properties() -> ProfileProperties {
             ProfileProperties {
                 profile_name: c_char_array_from_cstr(Self::NAME).unwrap(),
-                spec_version: Self::MIN_API_VERSION,
+                spec_version: Self::SPEC_VERSION,
             }
         }
     }
@@ -32,7 +32,7 @@ pub mod vp {
         pub fn profile_properties() -> ProfileProperties {
             ProfileProperties {
                 profile_name: c_char_array_from_cstr(Self::NAME).unwrap(),
-                spec_version: Self::MIN_API_VERSION,
+                spec_version: Self::SPEC_VERSION,
             }
         }
     }
@@ -48,7 +48,7 @@ pub mod vp {
         pub fn profile_properties() -> ProfileProperties {
             ProfileProperties {
                 profile_name: c_char_array_from_cstr(Self::NAME).unwrap(),
-                spec_version: Self::MIN_API_VERSION,
+                spec_version: Self::SPEC_VERSION,
             }
         }
     }
@@ -64,7 +64,7 @@ pub mod vp {
         pub fn profile_properties() -> ProfileProperties {
             ProfileProperties {
                 profile_name: c_char_array_from_cstr(Self::NAME).unwrap(),
-                spec_version: Self::MIN_API_VERSION,
+                spec_version: Self::SPEC_VERSION,
             }
         }
     }
@@ -461,10 +461,13 @@ mod tests {
     use ash::vk;
 
     fn create_instance() -> (vp::ProfileProperties, ash::Instance) {
-        let profile = unsafe { vp::get_profiles().unwrap() }.into_iter().find(|profile| {
-            unsafe { vp::get_instance_profile_support(profile).unwrap() }
-        }).unwrap();
-        println!("Found supported profile: {:?}", profile);
+        // let profile = unsafe { vp::get_profiles().unwrap() }.into_iter().find(|profile| {
+        //     unsafe { vp::get_instance_profile_support(profile).unwrap() }
+        // }).unwrap();
+        // println!("Found supported profile: {:?}", profile);
+
+        let profile = vp::LunargDesktopPortability2021::profile_properties();
+        assert!(unsafe { vp::get_instance_profile_support(&profile).unwrap() });
 
         let entry = unsafe { ash::Entry::load().unwrap() };
 
@@ -486,6 +489,9 @@ mod tests {
         };
 
         assert!(profiles.len() > 0);
+        for profile in &profiles {
+            println!("Profile {:?}: {:?}", unsafe { vp::get_instance_profile_support(profile).unwrap()}, profile);
+        }
 
         unsafe { vp::get_profile_fallbacks(&profiles[0]).unwrap() };
     }
@@ -515,6 +521,8 @@ mod tests {
         let (profile, instance) = create_instance();
 
         let physical_device = unsafe { instance.enumerate_physical_devices().unwrap() }.into_iter().find(|device| {
+            let props = unsafe { instance.get_physical_device_properties(*device) };
+            println!("PhysicalDevice: {:?}", unsafe { std::ffi::CStr::from_ptr(props.device_name.as_ptr()) });
             unsafe { vp::get_physical_device_profile_support(&instance, *device, &profile).expect("Error queueing physical device support") }
         }).expect("Failed to find suitable physical device");
 
