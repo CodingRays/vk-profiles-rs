@@ -270,10 +270,14 @@ pub mod vp {
         })
     }
 
-    // TODO add the layer parameter
-    pub unsafe fn get_instance_profile_support(profile: &ProfileProperties) -> VkResult<bool> {
+    pub unsafe fn get_instance_profile_support(layer: Option<&::std::ffi::CStr>, profile: &ProfileProperties) -> VkResult<bool> {
+        let layer = match layer {
+            Some(layer) => layer.as_ptr(),
+            _ => std::ptr::null()
+        };
+
         let mut supported: vk::Bool32 = 0;
-        sys::vpGetInstanceProfileSupport(std::ptr::null(), profile, &mut supported).result()?;
+        sys::vpGetInstanceProfileSupport(layer, profile, &mut supported).result()?;
         if supported == 0 {
             Ok(false)
         } else {
@@ -429,7 +433,7 @@ mod tests {
         // println!("Found supported profile: {:?}", profile);
 
         let profile = vp::LunargDesktopPortability2021::profile_properties();
-        assert!(unsafe { vp::get_instance_profile_support(&profile).unwrap() });
+        assert!(unsafe { vp::get_instance_profile_support(None, &profile).unwrap() });
 
         let entry = unsafe { ash::Entry::load().unwrap() };
 
@@ -452,7 +456,7 @@ mod tests {
 
         assert!(profiles.len() > 0);
         for profile in &profiles {
-            println!("Profile {:?}: {:?}", unsafe { vp::get_instance_profile_support(profile).unwrap()}, profile);
+            println!("Profile {:?}: {:?}", unsafe { vp::get_instance_profile_support(None, profile).unwrap()}, profile);
         }
 
         unsafe { vp::get_profile_fallbacks(&profiles[0]).unwrap() };
