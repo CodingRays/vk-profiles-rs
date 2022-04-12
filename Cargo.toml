@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 # The profiles library requires the vulkan loader to be statically linked
 ash = {version="0.37.0", features=["linked", "debug"]}
+link-cplusplus = "1.0.6"
 
 [build-dependencies]
 cmake = "0.1.48"

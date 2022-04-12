@@ -1,3 +1,5 @@
+extern crate link_cplusplus;
+
 pub mod vp {
     use ash::prelude::VkResult;
     use ash::vk;
