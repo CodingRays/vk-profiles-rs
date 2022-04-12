@@ -140,7 +140,18 @@ pub mod vp {
         })
     }
 
-    // TODO: Queue family properties requires a vector of initialized pNext chains. How do we deal with this?
+    pub unsafe fn get_profile_queue_family_properties(profile: &ProfileProperties, properties: &mut [vk::QueueFamilyProperties2]) -> VkResult<()> {
+        let mut count = properties.len() as u32;
+        sys::vpGetProfileQueueFamilyProperties(profile, &mut count, properties.as_mut_ptr()).result()?;
+        assert_eq!(count as usize, properties.len());
+        Ok(())
+    }
+
+    pub unsafe fn get_profile_queue_family_structure_types(profile: &ProfileProperties) -> VkResult<Vec<vk::StructureType>> {
+        read_into_uninitialized_vector(|count, data| {
+            sys::vpGetProfileQueueFamilyStructureTypes(profile, count, data)
+        })
+    }
 
     pub unsafe fn get_profile_formats(profile: &ProfileProperties) -> VkResult<Vec<vk::Format>> {
         read_into_uninitialized_vector(|count, data| {
@@ -221,45 +232,6 @@ pub mod vp {
             f(&mut count, std::ptr::null_mut()).result()?;
             let mut data =
                 Vec::with_capacity(count.try_into().expect("`N` failed to convert to `usize`"));
-
-            let err_code = f(&mut count, data.as_mut_ptr());
-            if err_code != vk::Result::INCOMPLETE {
-                data.set_len(count.try_into().expect("`N` failed to convert to `usize`"));
-                break err_code.result_with_success(data);
-            }
-        }
-    }
-    
-    /// This is a direct copy from ash::prelude (because it is not public).
-    ///
-    /// Repeatedly calls `f` until it does not return [`vk::Result::INCOMPLETE`] anymore,
-    /// ensuring all available data has been read into the vector.
-    ///
-    /// Items in the target vector are [`default()`][`Default::default()`]-initialized which
-    /// is required for [`vk::BaseOutStructure`]-like structs where [`vk::BaseOutStructure::s_type`]
-    /// needs to be a valid type and [`vk::BaseOutStructure::p_next`] a valid or
-    /// [`null`][`std::ptr::null_mut()`] pointer.
-    ///
-    /// See for example [`vkEnumerateInstanceExtensionProperties`]: the number of available
-    /// items may change between calls; [`vk::Result::INCOMPLETE`] is returned when the count
-    /// increased (and the vector is not large enough after querying the initial size),
-    /// requiring Ash to try again.
-    ///
-    /// [`vkEnumerateInstanceExtensionProperties`]: https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/vkEnumerateInstanceExtensionProperties.html
-    pub(crate) unsafe fn read_into_defaulted_vector<
-        N: Copy + Default + TryInto<usize>,
-        T: Default + Clone,
-    >(
-        f: impl Fn(&mut N, *mut T) -> vk::Result,
-    ) -> VkResult<Vec<T>>
-    where
-        <N as TryInto<usize>>::Error: std::fmt::Debug,
-    {
-        loop {
-            let mut count = N::default();
-            f(&mut count, std::ptr::null_mut()).result()?;
-            let mut data =
-                vec![Default::default(); count.try_into().expect("`N` failed to convert to `usize`")];
 
             let err_code = f(&mut count, data.as_mut_ptr());
             if err_code != vk::Result::INCOMPLETE {
