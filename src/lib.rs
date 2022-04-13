@@ -35,7 +35,7 @@
 //!
 //! ## Important notes
 //!
-//! The vulkan loader must be statically linked in ash.
+//! Currently only static linking is supported. This means that the vulkan loader must also be statically linked in ash.
 
 extern crate link_cplusplus;
 
