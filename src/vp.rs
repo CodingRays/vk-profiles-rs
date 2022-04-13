@@ -4,7 +4,6 @@
 
 use crate::prelude::*;
 
-use ash::prelude::VkResult;
 use ash::vk;
 use std::ffi::c_void;
 
@@ -259,213 +258,81 @@ impl<'a> DeviceCreateInfoBuilder<'a> {
     }
 }
 
-/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profiles>
-pub unsafe fn get_profiles() -> VkResult<Vec<ProfileProperties>> {
-    read_into_uninitialized_vector(|count, data| sys::vpGetProfiles(count, data))
+#[derive(Clone)]
+pub struct ProfilesFn {
+    pub get_profiles: PFN_vpGetProfiles,
+    pub get_profile_fallbacks: PFN_vpGetProfileFallbacks,
+    pub get_instance_profile_support: PFN_vpGetInstanceProfileSupport,
+    pub create_instance: PFN_vpCreateInstance,
+    pub get_physical_device_profile_support: PFN_vpGetPhysicalDeviceProfileSupport,
+    pub create_device: PFN_vpCreateDevice,
+    pub get_profile_instance_extension_properties: PFN_vpGetProfileInstanceExtensionProperties,
+    pub get_profile_device_extension_properties: PFN_vpGetProfileDeviceExtensionProperties,
+    pub get_profile_features: PFN_vpGetProfileFeatures,
+    pub get_profile_feature_structure_types: PFN_vpGetProfileFeatureStructureTypes,
+    pub get_profile_properties: PFN_vpGetProfileProperties,
+    pub get_profile_property_structure_types: PFN_vpGetProfilePropertyStructureTypes,
+    pub get_profile_queue_family_properties: PFN_vpGetProfileQueueFamilyProperties,
+    pub get_profile_queue_family_structure_types: PFN_vpGetProfileQueueFamilyStructureTypes,
+    pub get_profile_formats: PFN_vpGetProfileFormats,
+    pub get_profile_format_properties: PFN_vpGetProfileFormatProperties,
+    pub get_profile_format_structure_types: PFN_vpGetProfileFormatStructureTypes,
 }
-
-/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-fallbacks>
-pub unsafe fn get_profile_fallbacks(
-    profile: &ProfileProperties,
-) -> VkResult<Vec<ProfileProperties>> {
-    read_into_uninitialized_vector(|count, data| sys::vpGetProfileFallbacks(profile, count, data))
-}
-
-/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-check-instance-level-support>
-pub unsafe fn get_instance_profile_support(
-    layer: Option<&::std::ffi::CStr>,
-    profile: &ProfileProperties,
-) -> VkResult<bool> {
-    let layer = match layer {
-        Some(layer) => layer.as_ptr(),
-        _ => std::ptr::null(),
-    };
-
-    let mut supported: vk::Bool32 = 0;
-    sys::vpGetInstanceProfileSupport(layer, profile, &mut supported).result()?;
-    if supported == 0 {
-        Ok(false)
-    } else {
-        Ok(true)
+unsafe impl Send for ProfilesFn {}
+unsafe impl Sync for ProfilesFn {}
+impl ProfilesFn {
+    pub fn load_static() -> Self {
+        Self {
+            get_profiles: sys::vpGetProfiles,
+            get_profile_fallbacks: sys::vpGetProfileFallbacks,
+            get_instance_profile_support: sys::vpGetInstanceProfileSupport,
+            create_instance: sys::vpCreateInstance,
+            get_physical_device_profile_support: sys::vpGetPhysicalDeviceProfileSupport,
+            create_device: sys::vpCreateDevice,
+            get_profile_instance_extension_properties: sys::vpGetProfileInstanceExtensionProperties,
+            get_profile_device_extension_properties: sys::vpGetProfileDeviceExtensionProperties,
+            get_profile_features: sys::vpGetProfileFeatures,
+            get_profile_feature_structure_types: sys::vpGetProfileFeatureStructureTypes,
+            get_profile_properties: sys::vpGetProfileProperties,
+            get_profile_property_structure_types: sys::vpGetProfilePropertyStructureTypes,
+            get_profile_queue_family_properties: sys::vpGetProfileQueueFamilyProperties,
+            get_profile_queue_family_structure_types: sys::vpGetProfileQueueFamilyStructureTypes,
+            get_profile_formats: sys::vpGetProfileFormats,
+            get_profile_format_properties: sys::vpGetProfileFormatProperties,
+            get_profile_format_structure_types: sys::vpGetProfileFormatStructureTypes,
+        }
     }
-}
-
-/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-create-instance-with-profile>
-pub unsafe fn create_instance(
-    entry: &ash::Entry,
-    create_info: &InstanceCreateInfo,
-    allocator: Option<vk::AllocationCallbacks>,
-) -> VkResult<ash::Instance> {
-    let allocator = match allocator {
-        Some(allocator) => &allocator,
-        _ => std::ptr::null(),
-    };
-
-    let mut instance = std::mem::zeroed();
-    sys::vpCreateInstance(create_info, allocator, &mut instance).result()?;
-    Ok(ash::Instance::load(entry.static_fn(), instance))
-}
-
-/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-check-device-level-support>
-pub unsafe fn get_physical_device_profile_support(
-    instance: &ash::Instance,
-    physical_device: vk::PhysicalDevice,
-    profile: &ProfileProperties,
-) -> VkResult<bool> {
-    let mut supported: vk::Bool32 = 0;
-    sys::vpGetPhysicalDeviceProfileSupport(
-        instance.handle(),
-        physical_device,
-        profile,
-        &mut supported,
-    )
-    .result()?;
-    if supported == 0 {
-        Ok(false)
-    } else {
-        Ok(true)
-    }
-}
-
-/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-create-device-with-profile>
-pub unsafe fn create_device(
-    instance: &ash::Instance,
-    physical_device: vk::PhysicalDevice,
-    create_info: &DeviceCreateInfo,
-    allocator: Option<vk::AllocationCallbacks>,
-) -> VkResult<ash::Device> {
-    let allocator = match allocator {
-        Some(allocator) => &allocator,
-        _ => std::ptr::null(),
-    };
-
-    let mut device = std::mem::zeroed();
-    sys::vpCreateDevice(physical_device, create_info, allocator, &mut device).result()?;
-    Ok(ash::Device::load(instance.fp_v1_0(), device))
-}
-
-/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-instance-extensions>
-pub unsafe fn get_profile_instance_extension_properties(
-    profile: &ProfileProperties,
-) -> VkResult<Vec<vk::ExtensionProperties>> {
-    read_into_uninitialized_vector(|count, data| {
-        sys::vpGetProfileInstanceExtensionProperties(profile, count, data)
-    })
-}
-
-/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-device-extensions>
-pub unsafe fn get_profile_device_extension_properties(
-    profile: &ProfileProperties,
-) -> VkResult<Vec<vk::ExtensionProperties>> {
-    read_into_uninitialized_vector(|count, data| {
-        sys::vpGetProfileDeviceExtensionProperties(profile, count, data)
-    })
-}
-
-/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-features>
-pub unsafe fn get_profile_features(profile: &ProfileProperties, p_next: &mut vk::BaseOutStructure) {
-    sys::vpGetProfileFeatures(profile, p_next as *mut _ as *mut c_void);
-}
-
-/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-features>
-pub unsafe fn get_profile_feature_structure_types(
-    profile: &ProfileProperties,
-) -> VkResult<Vec<vk::StructureType>> {
-    read_into_uninitialized_vector(|count, data| {
-        sys::vpGetProfileFeatureStructureTypes(profile, count, data)
-    })
-}
-
-/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-device-properties>
-pub unsafe fn get_profile_properties(
-    profile: &ProfileProperties,
-    p_next: &mut vk::BaseOutStructure,
-) {
-    sys::vpGetProfileProperties(profile, p_next as *mut _ as *mut c_void);
-}
-
-/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-device-properties>
-pub unsafe fn get_profile_property_structure_types(
-    profile: &ProfileProperties,
-) -> VkResult<Vec<vk::StructureType>> {
-    read_into_uninitialized_vector(|count, data| {
-        sys::vpGetProfilePropertyStructureTypes(profile, count, data)
-    })
-}
-
-/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-queue-family-properties>
-pub unsafe fn get_profile_queue_family_properties(
-    profile: &ProfileProperties,
-    properties: &mut [vk::QueueFamilyProperties2],
-) -> VkResult<()> {
-    let mut count = properties.len() as u32;
-    sys::vpGetProfileQueueFamilyProperties(profile, &mut count, properties.as_mut_ptr())
-        .result()?;
-    assert_eq!(count as usize, properties.len());
-    Ok(())
-}
-
-/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-queue-family-properties>
-pub unsafe fn get_profile_queue_family_structure_types(
-    profile: &ProfileProperties,
-) -> VkResult<Vec<vk::StructureType>> {
-    read_into_uninitialized_vector(|count, data| {
-        sys::vpGetProfileQueueFamilyStructureTypes(profile, count, data)
-    })
-}
-
-/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-format-properties>
-pub unsafe fn get_profile_formats(profile: &ProfileProperties) -> VkResult<Vec<vk::Format>> {
-    read_into_uninitialized_vector(|count, data| sys::vpGetProfileFormats(profile, count, data))
-}
-
-/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-format-properties>
-pub unsafe fn get_profile_format_properties(
-    profile: &ProfileProperties,
-    format: vk::Format,
-    p_next: &mut vk::BaseOutStructure,
-) {
-    sys::vpGetProfileFormatProperties(profile, format, p_next as *mut _ as *mut c_void);
-}
-
-/// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-format-properties>
-pub unsafe fn get_profile_format_structure_types(
-    profile: &ProfileProperties,
-) -> VkResult<Vec<vk::StructureType>> {
-    read_into_uninitialized_vector(|count, data| {
-        sys::vpGetProfileFormatStructureTypes(profile, count, data)
-    })
 }
 
 #[allow(non_camel_case_types)]
-pub type PFN_vpGetProfiles = unsafe extern "system" fn(
+pub type PFN_vpGetProfiles = unsafe extern "C" fn(
     pPropertyCount: *mut u32,
     pProperties: *mut ProfileProperties,
 ) -> vk::Result;
 
 #[allow(non_camel_case_types)]
-pub type PFN_vpGetProfileFallbacks = unsafe extern "system" fn(
+pub type PFN_vpGetProfileFallbacks = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     pPropertyCount: *mut u32,
     pProperties: *mut ProfileProperties,
 ) -> vk::Result;
 
 #[allow(non_camel_case_types)]
-pub type PFN_vpGetInstanceProfileSupport = unsafe extern "system" fn(
+pub type PFN_vpGetInstanceProfileSupport = unsafe extern "C" fn(
     pLayerName: *const std::os::raw::c_char,
     pProfile: *const ProfileProperties,
     pSupported: *mut vk::Bool32,
 ) -> vk::Result;
 
 #[allow(non_camel_case_types)]
-pub type PFN_vpCreateInstance = unsafe extern "system" fn(
+pub type PFN_vpCreateInstance = unsafe extern "C" fn(
     pCreateInfo: *const InstanceCreateInfo,
     pAllocator: *const vk::AllocationCallbacks,
     p_instance: *mut vk::Instance,
 ) -> vk::Result;
 
 #[allow(non_camel_case_types)]
-pub type PFN_vpGetPhysicalDeviceProfileSupport = unsafe extern "system" fn(
+pub type PFN_vpGetPhysicalDeviceProfileSupport = unsafe extern "C" fn(
     instance: ash::vk::Instance,
     physicalDevice: ash::vk::PhysicalDevice,
     pProfile: *const ProfileProperties,
@@ -473,7 +340,7 @@ pub type PFN_vpGetPhysicalDeviceProfileSupport = unsafe extern "system" fn(
 ) -> vk::Result;
 
 #[allow(non_camel_case_types)]
-pub type PFN_vpCreateDevice = unsafe extern "system" fn(
+pub type PFN_vpCreateDevice = unsafe extern "C" fn(
     physicalDevice: ash::vk::PhysicalDevice,
     pCreateInfo: *const DeviceCreateInfo,
     pAllocator: *const vk::AllocationCallbacks,
@@ -481,75 +348,75 @@ pub type PFN_vpCreateDevice = unsafe extern "system" fn(
 ) -> vk::Result;
 
 #[allow(non_camel_case_types)]
-pub type PFN_vpGetProfileInstanceExtensionProperties = unsafe extern "system" fn(
+pub type PFN_vpGetProfileInstanceExtensionProperties = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     pPropertyCount: *mut u32,
     pProperties: *mut vk::ExtensionProperties,
 ) -> vk::Result;
 
 #[allow(non_camel_case_types)]
-pub type PFN_vpGetProfileDeviceExtensionProperties = unsafe extern "system" fn(
+pub type PFN_vpGetProfileDeviceExtensionProperties = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     pPropertyCount: *mut u32,
     pProperties: *mut vk::ExtensionProperties,
 ) -> vk::Result;
 
 #[allow(non_camel_case_types)]
-pub type PFN_vpGetProfileFeatures = unsafe extern "system" fn(
+pub type PFN_vpGetProfileFeatures = unsafe extern "C" fn(
     pProfile: *const ProfileProperties, 
     pNext: *mut c_void
 );
 
 #[allow(non_camel_case_types)]
-pub type PFN_vpGetProfileFeatureStructureTypes = unsafe extern "system" fn(
+pub type PFN_vpGetProfileFeatureStructureTypes = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     pStructureTypeCount: *mut u32,
     pStructureTypes: *mut vk::StructureType,
 ) -> vk::Result;
 
 #[allow(non_camel_case_types)]
-pub type PFN_vpGetProfileProperties = unsafe extern "system" fn(
+pub type PFN_vpGetProfileProperties = unsafe extern "C" fn(
     pProfile: *const ProfileProperties, 
     pNext: *mut c_void
 );
 
 #[allow(non_camel_case_types)]
-pub type PFN_vpGetProfilePropertyStructureTypes = unsafe extern "system" fn(
+pub type PFN_vpGetProfilePropertyStructureTypes = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     pStructureTypeCount: *mut u32,
     pStructureTypes: *mut vk::StructureType,
 ) -> vk::Result;
 
 #[allow(non_camel_case_types)]
-pub type PFN_vpGetProfileQueueFamilyProperties = unsafe extern "system" fn(
+pub type PFN_vpGetProfileQueueFamilyProperties = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     pPropertyCount: *mut u32,
     pProperties: *mut vk::QueueFamilyProperties2,
 ) -> vk::Result;
 
 #[allow(non_camel_case_types)]
-pub type PFN_vpGetProfileQueueFamilyStructureTypes = unsafe extern "system" fn(
+pub type PFN_vpGetProfileQueueFamilyStructureTypes = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     pStructureTypeCount: *mut u32,
     pStructureTypes: *mut vk::StructureType,
 ) -> vk::Result;
 
 #[allow(non_camel_case_types)]
-pub type PFN_vpGetProfileFormats = unsafe extern "system" fn(
+pub type PFN_vpGetProfileFormats = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     pFormatCount: *mut u32,
     pFormats: *mut vk::Format,
 ) -> vk::Result;
 
 #[allow(non_camel_case_types)]
-pub type PFN_vpGetProfileFormatProperties = unsafe extern "system" fn(
+pub type PFN_vpGetProfileFormatProperties = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     format: vk::Format,
     pNext: *mut c_void,
 );
 
 #[allow(non_camel_case_types)]
-pub type PFN_vpGetProfileFormatStructureTypes = unsafe extern "system" fn(
+pub type PFN_vpGetProfileFormatStructureTypes = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     pStructureTypeCount: *mut u32,
     pStructureTypes: *mut vk::StructureType,
