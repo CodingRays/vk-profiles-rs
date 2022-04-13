@@ -2,7 +2,7 @@
 //! <https://github.com/KhronosGroup/Vulkan-Profiles>
 //! 
 //! ## Examples
-//! ```
+//! ```no_run
 //! use ash::vk;
 //! use vk_profiles_rs::vp;
 //! 
