@@ -258,6 +258,7 @@ impl<'a> DeviceCreateInfoBuilder<'a> {
     }
 }
 
+/// Holds all the function pointers of the vulkan profiles library
 #[derive(Clone)]
 pub struct ProfilesFn {
     pub get_profiles: PFN_vpGetProfiles,
@@ -281,6 +282,7 @@ pub struct ProfilesFn {
 unsafe impl Send for ProfilesFn {}
 unsafe impl Sync for ProfilesFn {}
 impl ProfilesFn {
+    /// Initializes the table from a statically linked library
     pub fn load_static() -> Self {
         Self {
             get_profiles: sys::vpGetProfiles,
@@ -422,11 +424,11 @@ pub type PFN_vpGetProfileFormatStructureTypes = unsafe extern "C" fn(
     pStructureTypes: *mut vk::StructureType,
 ) -> vk::Result;
 
-pub mod sys {
-    //! External function definitions.
+mod sys {
+    //! External function definitions when statically linked.
     //! 
-    //! Usually these should not be accessed directly. All capabilites should be exposed
-    //! by the functions in the [crate::vp] module.
+    //! If raw access to these functions is needed use the [crate::VulkanProfiles::profiles_fn]
+    //! function to get the function pointer table.
 
     use super::*;
 
