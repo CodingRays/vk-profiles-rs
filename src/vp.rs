@@ -437,6 +437,124 @@ pub unsafe fn get_profile_format_structure_types(
     })
 }
 
+#[allow(non_camel_case_types)]
+pub type PFN_vpGetProfiles = unsafe extern "system" fn(
+    pPropertyCount: *mut u32,
+    pProperties: *mut ProfileProperties,
+) -> vk::Result;
+
+#[allow(non_camel_case_types)]
+pub type PFN_vpGetProfileFallbacks = unsafe extern "system" fn(
+    pProfile: *const ProfileProperties,
+    pPropertyCount: *mut u32,
+    pProperties: *mut ProfileProperties,
+) -> vk::Result;
+
+#[allow(non_camel_case_types)]
+pub type PFN_vpGetInstanceProfileSupport = unsafe extern "system" fn(
+    pLayerName: *const std::os::raw::c_char,
+    pProfile: *const ProfileProperties,
+    pSupported: *mut vk::Bool32,
+) -> vk::Result;
+
+#[allow(non_camel_case_types)]
+pub type PFN_vpCreateInstance = unsafe extern "system" fn(
+    pCreateInfo: *const InstanceCreateInfo,
+    pAllocator: *const vk::AllocationCallbacks,
+    p_instance: *mut vk::Instance,
+) -> vk::Result;
+
+#[allow(non_camel_case_types)]
+pub type PFN_vpGetPhysicalDeviceProfileSupport = unsafe extern "system" fn(
+    instance: ash::vk::Instance,
+    physicalDevice: ash::vk::PhysicalDevice,
+    pProfile: *const ProfileProperties,
+    supported: *mut vk::Bool32,
+) -> vk::Result;
+
+#[allow(non_camel_case_types)]
+pub type PFN_vpCreateDevice = unsafe extern "system" fn(
+    physicalDevice: ash::vk::PhysicalDevice,
+    pCreateInfo: *const DeviceCreateInfo,
+    pAllocator: *const vk::AllocationCallbacks,
+    pDevice: *mut vk::Device,
+) -> vk::Result;
+
+#[allow(non_camel_case_types)]
+pub type PFN_vpGetProfileInstanceExtensionProperties = unsafe extern "system" fn(
+    pProfile: *const ProfileProperties,
+    pPropertyCount: *mut u32,
+    pProperties: *mut vk::ExtensionProperties,
+) -> vk::Result;
+
+#[allow(non_camel_case_types)]
+pub type PFN_vpGetProfileDeviceExtensionProperties = unsafe extern "system" fn(
+    pProfile: *const ProfileProperties,
+    pPropertyCount: *mut u32,
+    pProperties: *mut vk::ExtensionProperties,
+) -> vk::Result;
+
+#[allow(non_camel_case_types)]
+pub type PFN_vpGetProfileFeatures = unsafe extern "system" fn(
+    pProfile: *const ProfileProperties, 
+    pNext: *mut c_void
+);
+
+#[allow(non_camel_case_types)]
+pub type PFN_vpGetProfileFeatureStructureTypes = unsafe extern "system" fn(
+    pProfile: *const ProfileProperties,
+    pStructureTypeCount: *mut u32,
+    pStructureTypes: *mut vk::StructureType,
+) -> vk::Result;
+
+#[allow(non_camel_case_types)]
+pub type PFN_vpGetProfileProperties = unsafe extern "system" fn(
+    pProfile: *const ProfileProperties, 
+    pNext: *mut c_void
+);
+
+#[allow(non_camel_case_types)]
+pub type PFN_vpGetProfilePropertyStructureTypes = unsafe extern "system" fn(
+    pProfile: *const ProfileProperties,
+    pStructureTypeCount: *mut u32,
+    pStructureTypes: *mut vk::StructureType,
+) -> vk::Result;
+
+#[allow(non_camel_case_types)]
+pub type PFN_vpGetProfileQueueFamilyProperties = unsafe extern "system" fn(
+    pProfile: *const ProfileProperties,
+    pPropertyCount: *mut u32,
+    pProperties: *mut vk::QueueFamilyProperties2,
+) -> vk::Result;
+
+#[allow(non_camel_case_types)]
+pub type PFN_vpGetProfileQueueFamilyStructureTypes = unsafe extern "system" fn(
+    pProfile: *const ProfileProperties,
+    pStructureTypeCount: *mut u32,
+    pStructureTypes: *mut vk::StructureType,
+) -> vk::Result;
+
+#[allow(non_camel_case_types)]
+pub type PFN_vpGetProfileFormats = unsafe extern "system" fn(
+    pProfile: *const ProfileProperties,
+    pFormatCount: *mut u32,
+    pFormats: *mut vk::Format,
+) -> vk::Result;
+
+#[allow(non_camel_case_types)]
+pub type PFN_vpGetProfileFormatProperties = unsafe extern "system" fn(
+    pProfile: *const ProfileProperties,
+    format: vk::Format,
+    pNext: *mut c_void,
+);
+
+#[allow(non_camel_case_types)]
+pub type PFN_vpGetProfileFormatStructureTypes = unsafe extern "system" fn(
+    pProfile: *const ProfileProperties,
+    pStructureTypeCount: *mut u32,
+    pStructureTypes: *mut vk::StructureType,
+) -> vk::Result;
+
 pub mod sys {
     //! External function definitions.
     //! 
