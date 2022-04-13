@@ -19,3 +19,7 @@ cmake = "0.1.48"
 default = ["debug"]
 # Whether vulkan profiles structs should implement Debug
 debug = ["ash/debug"]
+docs-rs = []
+
+[package.metadata.docs.rs]
+features = ["debug", "docs-rs"]
