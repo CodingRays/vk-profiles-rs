@@ -9,7 +9,7 @@ readme = "README.md"
 
 [dependencies]
 # The profiles library requires the vulkan loader to be statically linked
-ash = {version="0.37.0", features=["linked"]}
+ash = {version="0.36.0", features=["linked"]}
 link-cplusplus = "1.0.6"
 
 [build-dependencies]
