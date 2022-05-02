@@ -185,10 +185,10 @@ impl VulkanProfiles {
     }
 
     /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-features>
-    pub unsafe fn get_profile_features(
+    pub unsafe fn get_profile_features<T: ash::vk::ExtendsPhysicalDeviceFeatures2>(
         &self,
         profile: &ProfileProperties,
-        p_next: &mut vk::BaseOutStructure,
+        p_next: &mut T,
     ) {
         (self.profiles_fn.get_profile_features)(profile, p_next as *mut _ as *mut c_void);
     }
