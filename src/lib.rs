@@ -46,10 +46,25 @@ mod prelude;
 pub mod vp;
 
 use ash::prelude::VkResult;
-use ash::vk;
+use ash::vk::{self, ExtendsDeviceCreateInfo, ExtendsPhysicalDeviceProperties2};
 use prelude::*;
 use std::ffi::c_void;
 use vp::*;
+
+pub trait ProfileFeaturesInfo {
+}
+
+impl ProfileFeaturesInfo for vk::PhysicalDeviceFeatures2 {
+}
+
+pub trait ProfilePropertiesStruct {
+}
+
+impl ProfilePropertiesStruct for vk::PhysicalDeviceProperties2 {
+}
+
+impl ProfilePropertiesStruct for dyn vk::ExtendsPhysicalDeviceProperties2 {
+}
 
 /// A wrapper struct that provides access to the vulkan profiles functions.
 #[derive(Clone)]
@@ -184,13 +199,15 @@ impl VulkanProfiles {
         })
     }
 
+    /// Due to how ash's marker traits work the passed features *must* be wrapped in a [`vk::PhysicalDeviceFeatures2`] struct.
+    /// 
     /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-features>
     pub unsafe fn get_profile_features(
         &self,
         profile: &ProfileProperties,
-        p_next: &mut vk::BaseOutStructure,
+        features: &mut vk::PhysicalDeviceFeatures2,
     ) {
-        (self.profiles_fn.get_profile_features)(profile, p_next as *mut _ as *mut c_void);
+        (self.profiles_fn.get_profile_features)(profile, features as *mut _ as *mut c_void);
     }
 
     /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-features>
@@ -203,13 +220,15 @@ impl VulkanProfiles {
         })
     }
 
+    /// Due to how ash's marker traits work the passed properties *must* be wrapped in a [`vk::PhysicalDeviceProperties2`] struct.
+    /// 
     /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-device-properties>
     pub unsafe fn get_profile_properties(
         &self,
         profile: &ProfileProperties,
-        p_next: &mut vk::BaseOutStructure,
+        properties: &mut vk::PhysicalDeviceProperties2,
     ) {
-        (self.profiles_fn.get_profile_properties)(profile, p_next as *mut _ as *mut c_void);
+        (self.profiles_fn.get_profile_properties)(profile, properties as *mut _ as *mut c_void);
     }
 
     /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-device-properties>
