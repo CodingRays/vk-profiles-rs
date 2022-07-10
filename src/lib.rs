@@ -46,25 +46,10 @@ mod prelude;
 pub mod vp;
 
 use ash::prelude::VkResult;
-use ash::vk::{self, ExtendsDeviceCreateInfo, ExtendsPhysicalDeviceProperties2};
+use ash::vk;
 use prelude::*;
 use std::ffi::c_void;
 use vp::*;
-
-pub trait ProfileFeaturesInfo {
-}
-
-impl ProfileFeaturesInfo for vk::PhysicalDeviceFeatures2 {
-}
-
-pub trait ProfilePropertiesStruct {
-}
-
-impl ProfilePropertiesStruct for vk::PhysicalDeviceProperties2 {
-}
-
-impl ProfilePropertiesStruct for dyn vk::ExtendsPhysicalDeviceProperties2 {
-}
 
 /// A wrapper struct that provides access to the vulkan profiles functions.
 #[derive(Clone)]
