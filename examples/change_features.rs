@@ -20,6 +20,21 @@ fn main() {
 
     // We now have a working device using the selected profile.
     println!("Created device for profile {:?} using queue family: {:?}", profile, queue_family_index);
+
+    // Create a timeline semaphore
+    let mut timeline_info = vk::SemaphoreTypeCreateInfo::builder()
+        .semaphore_type(vk::SemaphoreType::TIMELINE)
+        .initial_value(0);
+    let create_info = vk::SemaphoreCreateInfo::builder()
+        .push_next(&mut timeline_info);
+    let semaphore = unsafe {
+        device.create_semaphore(&create_info, None)
+    }.expect("Failed to create timeline semaphore");
+
+    unsafe {
+        device.destroy_semaphore(semaphore, None)
+    };
+
     unsafe { device.queue_wait_idle(queue) }.unwrap();
     unsafe { device.device_wait_idle() }.unwrap();
 
