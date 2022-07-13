@@ -9,7 +9,7 @@ Rust bindings for the [Vulkan Profiles](https://github.com/KhronosGroup/Vulkan-P
 These are required to build the vulkan profiles library
 - A C++ compiler
 - CMake
-- Vulkan SDK
+- Vulkan SDK. Only the vulkan headers are required for the build.
 
 ## License
 

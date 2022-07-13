@@ -1,11 +1,10 @@
 project( vkprofiles )
 cmake_minimum_required( VERSION 3.13 )
 include(FetchContent)
+include(FindVulkan)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-find_package(Vulkan REQUIRED)
 
 FetchContent_Declare(
     VkProfiles
