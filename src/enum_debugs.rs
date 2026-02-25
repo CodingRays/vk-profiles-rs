@@ -22,10 +22,7 @@ impl std::fmt::Debug for InstanceCreateFlagBits {
 impl std::fmt::Debug for DeviceCreateFlagBits {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         const KNOWN: &[(vk::Flags, &str)] = &[
-            (
-                DeviceCreateFlagBits::MERGE_EXTENSIONS.0,
-                "MERGE_EXTENSIONS",
-            ),
+            (DeviceCreateFlagBits::MERGE_EXTENSIONS.0, "MERGE_EXTENSIONS"),
             (
                 DeviceCreateFlagBits::OVERRIDE_EXTENSIONS.0,
                 "OVERRIDE_EXTENSIONS",

@@ -1,5 +1,5 @@
 //! The vulkan profiles structures and function definitions.
-//! 
+//!
 //! See the vulkan profiles documentation for more details <https://vulkan.lunarg.com/doc/sdk/1.3.204.1/windows/profiles_api_library.html>
 
 use crate::prelude::*;
@@ -114,66 +114,18 @@ impl InstanceCreateFlagBits {
 #[repr(C)]
 #[cfg_attr(feature = "debug", derive(Debug))]
 #[derive(Copy, Clone)]
-pub struct InstanceCreateInfo {
-    pub p_create_info: *const vk::InstanceCreateInfo,
+pub struct InstanceCreateInfo<'a> {
+    pub p_create_info: *const vk::InstanceCreateInfo<'a>,
     pub p_profile: *const ProfileProperties,
     pub flags: InstanceCreateFlagBits,
 }
-impl ::std::default::Default for InstanceCreateInfo {
+impl ::std::default::Default for InstanceCreateInfo<'_> {
     fn default() -> Self {
         Self {
             p_create_info: std::ptr::null(),
             p_profile: std::ptr::null(),
             flags: InstanceCreateFlagBits::default(),
         }
-    }
-}
-impl InstanceCreateInfo {
-    pub fn builder<'a>() -> InstanceCreateInfoBuilder<'a> {
-        InstanceCreateInfoBuilder {
-            inner: Self::default(),
-            marker: ::std::marker::PhantomData,
-        }
-    }
-}
-
-#[repr(transparent)]
-pub struct InstanceCreateInfoBuilder<'a> {
-    inner: InstanceCreateInfo,
-    marker: ::std::marker::PhantomData<&'a ()>,
-}
-impl<'a> ::std::ops::Deref for InstanceCreateInfoBuilder<'a> {
-    type Target = InstanceCreateInfo;
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-impl<'a> ::std::ops::DerefMut for InstanceCreateInfoBuilder<'a> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
-    }
-}
-impl<'a> InstanceCreateInfoBuilder<'a> {
-    pub fn create_info(mut self, create_info: &'a vk::InstanceCreateInfo) -> Self {
-        self.inner.p_create_info = create_info;
-        self
-    }
-
-    pub fn profile(mut self, profile: &'a ProfileProperties) -> Self {
-        self.inner.p_profile = profile;
-        self
-    }
-
-    pub fn flags(mut self, flags: InstanceCreateFlagBits) -> Self {
-        self.inner.flags = flags;
-        self
-    }
-
-    /// Calling build will **discard** all the lifetime information. Only call this if
-    /// necessary! Builders implement `Deref` targeting their corresponding Vulkan-Profiles struct,
-    /// so references to builders can be passed directly to Vulkan-Profiles functions.
-    pub fn build(self) -> InstanceCreateInfo {
-        self.inner
     }
 }
 
@@ -195,66 +147,18 @@ impl DeviceCreateFlagBits {
 #[repr(C)]
 #[cfg_attr(feature = "debug", derive(Debug))]
 #[derive(Copy, Clone)]
-pub struct DeviceCreateInfo {
-    pub p_create_info: *const vk::DeviceCreateInfo,
+pub struct DeviceCreateInfo<'a> {
+    pub p_create_info: *const vk::DeviceCreateInfo<'a>,
     pub p_profile: *const ProfileProperties,
     pub flags: DeviceCreateFlagBits,
 }
-impl ::std::default::Default for DeviceCreateInfo {
+impl ::std::default::Default for DeviceCreateInfo<'_> {
     fn default() -> Self {
         Self {
             p_create_info: std::ptr::null(),
             p_profile: std::ptr::null(),
             flags: DeviceCreateFlagBits::default(),
         }
-    }
-}
-impl DeviceCreateInfo {
-    pub fn builder<'a>() -> DeviceCreateInfoBuilder<'a> {
-        DeviceCreateInfoBuilder {
-            inner: Self::default(),
-            marker: ::std::marker::PhantomData,
-        }
-    }
-}
-
-#[repr(transparent)]
-pub struct DeviceCreateInfoBuilder<'a> {
-    inner: DeviceCreateInfo,
-    marker: ::std::marker::PhantomData<&'a ()>,
-}
-impl<'a> ::std::ops::Deref for DeviceCreateInfoBuilder<'a> {
-    type Target = DeviceCreateInfo;
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-impl<'a> ::std::ops::DerefMut for DeviceCreateInfoBuilder<'a> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
-    }
-}
-impl<'a> DeviceCreateInfoBuilder<'a> {
-    pub fn create_info(mut self, create_info: &'a vk::DeviceCreateInfo) -> Self {
-        self.inner.p_create_info = create_info;
-        self
-    }
-
-    pub fn profile(mut self, profile: &'a ProfileProperties) -> Self {
-        self.inner.p_profile = profile;
-        self
-    }
-
-    pub fn flags(mut self, flags: DeviceCreateFlagBits) -> Self {
-        self.inner.flags = flags;
-        self
-    }
-
-    /// Calling build will **discard** all the lifetime information. Only call this if
-    /// necessary! Builders implement `Deref` targeting their corresponding Vulkan-Profiles struct,
-    /// so references to builders can be passed directly to Vulkan-Profiles functions.
-    pub fn build(self) -> DeviceCreateInfo {
-        self.inner
     }
 }
 
@@ -306,34 +210,34 @@ impl ProfilesFn {
     }
 }
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfiles = unsafe extern "C" fn(
     pPropertyCount: *mut u32,
     pProperties: *mut ProfileProperties,
 ) -> vk::Result;
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfileFallbacks = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     pPropertyCount: *mut u32,
     pProperties: *mut ProfileProperties,
 ) -> vk::Result;
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetInstanceProfileSupport = unsafe extern "C" fn(
     pLayerName: *const std::os::raw::c_char,
     pProfile: *const ProfileProperties,
     pSupported: *mut vk::Bool32,
 ) -> vk::Result;
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpCreateInstance = unsafe extern "C" fn(
     pCreateInfo: *const InstanceCreateInfo,
     pAllocator: *const vk::AllocationCallbacks,
     p_instance: *mut vk::Instance,
 ) -> vk::Result;
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetPhysicalDeviceProfileSupport = unsafe extern "C" fn(
     instance: ash::vk::Instance,
     physicalDevice: ash::vk::PhysicalDevice,
@@ -341,7 +245,7 @@ pub type PFN_vpGetPhysicalDeviceProfileSupport = unsafe extern "C" fn(
     supported: *mut vk::Bool32,
 ) -> vk::Result;
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpCreateDevice = unsafe extern "C" fn(
     physicalDevice: ash::vk::PhysicalDevice,
     pCreateInfo: *const DeviceCreateInfo,
@@ -349,75 +253,71 @@ pub type PFN_vpCreateDevice = unsafe extern "C" fn(
     pDevice: *mut vk::Device,
 ) -> vk::Result;
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfileInstanceExtensionProperties = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     pPropertyCount: *mut u32,
     pProperties: *mut vk::ExtensionProperties,
 ) -> vk::Result;
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfileDeviceExtensionProperties = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     pPropertyCount: *mut u32,
     pProperties: *mut vk::ExtensionProperties,
 ) -> vk::Result;
 
-#[allow(non_camel_case_types)]
-pub type PFN_vpGetProfileFeatures = unsafe extern "C" fn(
-    pProfile: *const ProfileProperties, 
-    pNext: *mut c_void
-);
+#[allow(non_camel_case_types, non_snake_case)]
+pub type PFN_vpGetProfileFeatures =
+    unsafe extern "C" fn(pProfile: *const ProfileProperties, pNext: *mut c_void);
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfileFeatureStructureTypes = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     pStructureTypeCount: *mut u32,
     pStructureTypes: *mut vk::StructureType,
 ) -> vk::Result;
 
-#[allow(non_camel_case_types)]
-pub type PFN_vpGetProfileProperties = unsafe extern "C" fn(
-    pProfile: *const ProfileProperties, 
-    pNext: *mut c_void
-);
+#[allow(non_camel_case_types, non_snake_case)]
+pub type PFN_vpGetProfileProperties =
+    unsafe extern "C" fn(pProfile: *const ProfileProperties, pNext: *mut c_void);
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfilePropertyStructureTypes = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     pStructureTypeCount: *mut u32,
     pStructureTypes: *mut vk::StructureType,
 ) -> vk::Result;
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfileQueueFamilyProperties = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     pPropertyCount: *mut u32,
     pProperties: *mut vk::QueueFamilyProperties2,
 ) -> vk::Result;
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfileQueueFamilyStructureTypes = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     pStructureTypeCount: *mut u32,
     pStructureTypes: *mut vk::StructureType,
 ) -> vk::Result;
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfileFormats = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     pFormatCount: *mut u32,
     pFormats: *mut vk::Format,
 ) -> vk::Result;
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfileFormatProperties = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     format: vk::Format,
     pNext: *mut c_void,
 );
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfileFormatStructureTypes = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
     pStructureTypeCount: *mut u32,
@@ -426,7 +326,7 @@ pub type PFN_vpGetProfileFormatStructureTypes = unsafe extern "C" fn(
 
 mod sys {
     //! External function definitions when statically linked.
-    //! 
+    //!
     //! If raw access to these functions is needed use the [crate::VulkanProfiles::profiles_fn]
     //! function to get the function pointer table.
 

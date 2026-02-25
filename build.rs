@@ -1,8 +1,7 @@
 extern crate cmake;
 
 #[cfg(feature = "docs-rs")]
-fn main() {
-}
+fn main() {}
 
 #[cfg(not(feature = "docs-rs"))]
 fn main() {

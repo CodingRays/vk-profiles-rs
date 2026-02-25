@@ -1,9 +1,9 @@
 //! These are useful utility functions.
-//! 
+//!
 //! Many of these functions are copied directly from ash as they are not declared public.
 
-use ash::vk;
 use ash::prelude::VkResult;
+use ash::vk;
 
 /// This is a direct copy from ash::prelude (because it is not public).
 ///
@@ -65,11 +65,12 @@ pub(crate) fn debug_flags<Value: Into<u64> + Copy>(
     Ok(())
 }
 
-
 /// Creates a fixed size c_char array from a CStr.
-/// 
+///
 /// If the size of the string is too large for the array None is returned.
-pub(crate) fn c_char_array_from_cstr<const N: usize>(data: &::std::ffi::CStr) -> Option<[::std::os::raw::c_char; N]> {
+pub(crate) fn c_char_array_from_cstr<const N: usize>(
+    data: &::std::ffi::CStr,
+) -> Option<[::std::os::raw::c_char; N]> {
     let mut result: [::std::os::raw::c_char; N] = unsafe { ::std::mem::zeroed() }; // Default not implemented for arbitrary length
 
     // Yes this is stupid but rust FFI is absolutely useless

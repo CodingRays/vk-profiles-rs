@@ -14,11 +14,14 @@
 //! let profile = vp::LunargDesktopPortability2021::profile_properties();
 //! assert!(unsafe { vk_profiles.get_instance_profile_support(None, &profile)? });
 //!
-//! let instance_info = vk::InstanceCreateInfo::builder();
+//! let profile = vp::LunargDesktopPortability2021::profile_properties();
 //!
-//! let vp_instance_info = vp::InstanceCreateInfo::builder()
-//!     .create_info(&instance_info)
-//!     .profile(&profile);
+//! let instance_info = vk::InstanceCreateInfo::default();
+//! let vp_instance_info = vp::InstanceCreateInfo {
+//!     p_create_info: &instance_info,
+//!     p_profile: &profile,
+//!     ..Default::default()
+//! };
 //!
 //! let entry = ash::Entry::linked();
 //!
@@ -58,7 +61,7 @@ pub struct VulkanProfiles {
 }
 
 impl VulkanProfiles {
-    /// Loads the function pointers when the vulkan profiles library is statically 
+    /// Loads the function pointers when the vulkan profiles library is statically
     /// linked (which is currently the only option).
     pub fn linked() -> Self {
         VulkanProfiles {
@@ -185,7 +188,7 @@ impl VulkanProfiles {
     }
 
     /// Due to how ash's marker traits work the passed features *must* be wrapped in a [`vk::PhysicalDeviceFeatures2`] struct.
-    /// 
+    ///
     /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-features>
     pub unsafe fn get_profile_features(
         &self,
@@ -206,7 +209,7 @@ impl VulkanProfiles {
     }
 
     /// Due to how ash's marker traits work the passed properties *must* be wrapped in a [`vk::PhysicalDeviceProperties2`] struct.
-    /// 
+    ///
     /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-device-properties>
     pub unsafe fn get_profile_properties(
         &self,
@@ -304,10 +307,12 @@ mod tests {
 
         let entry = ash::Entry::linked();
 
-        let instance_info = vk::InstanceCreateInfo::builder();
-        let vp_instance_info = vp::InstanceCreateInfo::builder()
-            .create_info(&instance_info)
-            .profile(&profile);
+        let instance_info = vk::InstanceCreateInfo::default();
+        let vp_instance_info = vp::InstanceCreateInfo {
+            p_create_info: &instance_info,
+            p_profile: &profile,
+            ..Default::default()
+        };
 
         let instance = unsafe {
             profiles
@@ -407,16 +412,23 @@ mod tests {
             })
             .expect("Failed to find suitable physical device");
 
-        let queue_info = vk::DeviceQueueCreateInfo::builder()
-            .queue_family_index(0)
-            .queue_priorities(&[1.0]);
+        let queue_priorities: [f32; 1] = [1.0];
+        let queue_info = vk::DeviceQueueCreateInfo {
+            queue_family_index: 0,
+            p_queue_priorities: queue_priorities.as_ptr(),
+            ..Default::default()
+        };
 
-        let device_info =
-            vk::DeviceCreateInfo::builder().queue_create_infos(std::slice::from_ref(&queue_info));
+        let device_info = vk::DeviceCreateInfo {
+            p_queue_create_infos: std::ptr::addr_of!(queue_info),
+            ..Default::default()
+        };
 
-        let vp_device_info = vp::DeviceCreateInfo::builder()
-            .create_info(&device_info)
-            .profile(&profile);
+        let vp_device_info = vp::DeviceCreateInfo {
+            p_create_info: &device_info,
+            p_profile: &profile,
+            ..Default::default()
+        };
 
         let device = unsafe {
             vk_profiles
