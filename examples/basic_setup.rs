@@ -106,7 +106,7 @@ fn create_device(
             };
 
             let device_info = vk::DeviceCreateInfo {
-                p_queue_create_infos: std::ptr::addr_of!(queue_info),
+                p_queue_create_infos: &queue_info,
                 queue_create_info_count: 1,
                 ..Default::default()
             };

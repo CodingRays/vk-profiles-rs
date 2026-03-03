@@ -4,12 +4,9 @@
 
 use crate::prelude::*;
 
-use ash::define_handle;
 use ash::vk;
 use std::ffi::CStr;
-use std::fmt;
 use std::{ffi::c_void, ptr};
-use vk::{Handle, ObjectType};
 
 const VP_MAX_PROFILE_NAME_SIZE: usize = 256;
 
@@ -41,14 +38,11 @@ impl LunargDesktopBaseline2024 {
     }
 }
 
-pub struct LunargDesktopPortability2021;
-impl LunargDesktopPortability2021 {
-    pub const NAME: &'static ::std::ffi::CStr = unsafe {
-        ::std::ffi::CStr::from_bytes_with_nul_unchecked(b"VP_LUNARG_desktop_portability_2021\0")
-    };
-
+pub struct LunargMinimumRequirements1_1;
+impl LunargMinimumRequirements1_1 {
+    pub const NAME: &CStr = c"VP_LUNARG_minimum_requirements_1_1";
     pub const SPEC_VERSION: u32 = 1;
-    pub const MIN_API_VERSION: u32 = vk::make_api_version(0, 1, 1, 142);
+    pub const MIN_API_VERSION: u32 = vk::make_api_version(0, 1, 1, 108);
 
     pub fn profile_properties() -> ProfileProperties {
         ProfileProperties {
