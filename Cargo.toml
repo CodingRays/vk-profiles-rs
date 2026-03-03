@@ -9,11 +9,11 @@ readme = "README.md"
 
 [dependencies]
 # The profiles library requires the vulkan loader to be statically linked
-ash = {version="0.38.0", features=["linked"]}
+ash = {version="0.38.0", features=["linked", "loaded"]}
 link-cplusplus = "1.0.6"
 
 [build-dependencies]
-cmake = "0.1.48"
+cc = "1.2.56"
 
 [features]
 default = ["debug"]

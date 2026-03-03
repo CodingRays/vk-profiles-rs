@@ -19,3 +19,4 @@ Cargo.lock
 
 # Dev tools
 .vscode/
+build/
