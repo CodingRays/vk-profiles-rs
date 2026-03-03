@@ -3,10 +3,10 @@
 use std::ffi::c_char;
 
 use ash::vk;
-use vk_profiles_rs::{vp, VulkanProfiles};
+use vk_profiles_rs::{profiles, vp, VulkanProfiles};
 
 fn main() {
-    let profile = vp::LunargDesktopBaseline2024::profile_properties();
+    let profile = profiles::LunargDesktopBaseline2024::profile_properties();
 
     let entry = ash::Entry::linked();
     let vk_profiles = vk_profiles_rs::VulkanProfiles::linked();

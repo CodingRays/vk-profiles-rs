@@ -46,6 +46,7 @@ extern crate link_cplusplus;
 #[doc(hidden)]
 pub mod enum_debugs;
 mod prelude;
+pub mod profiles;
 pub mod vp;
 
 use ash::prelude::VkResult;
@@ -336,6 +337,7 @@ impl VulkanProfiles {
 
 #[cfg(test)]
 mod tests {
+    use crate::profiles;
     use crate::vp;
     use crate::VulkanProfiles;
     use ash::vk;
@@ -344,7 +346,7 @@ mod tests {
         entry: &ash::Entry,
         vk_profiles: &VulkanProfiles,
     ) -> (vp::ProfileProperties, ash::Instance) {
-        let profile = vp::LunargMinimumRequirements1_1::profile_properties();
+        let profile = profiles::LunargMinimumRequirements1_1::profile_properties();
         assert!(unsafe {
             vk_profiles
                 .get_instance_profile_support(None, &profile)
@@ -394,44 +396,46 @@ mod tests {
     fn test_enumerate_profile_details() {
         let vk_profiles = VulkanProfiles::linked();
 
-        let profile = unsafe { vk_profiles.get_profiles().unwrap() }[0];
+        let profiles = unsafe { vk_profiles.get_profiles().unwrap() };
         let block_name = None;
 
-        unsafe {
-            vk_profiles
-                .get_profile_instance_extension_properties(&profile, block_name)
-                .unwrap()
-        };
-        unsafe {
-            vk_profiles
-                .get_profile_device_extension_properties(&profile, block_name)
-                .unwrap()
-        };
-        unsafe {
-            vk_profiles
-                .get_profile_feature_structure_types(&profile, block_name)
-                .unwrap()
-        };
-        unsafe {
-            vk_profiles
-                .get_profile_property_structure_types(&profile, block_name)
-                .unwrap()
-        };
-        unsafe {
-            vk_profiles
-                .get_profile_queue_family_structure_types(&profile, block_name)
-                .unwrap()
-        };
-        unsafe {
-            vk_profiles
-                .get_profile_formats(&profile, block_name)
-                .unwrap()
-        };
-        unsafe {
-            vk_profiles
-                .get_profile_property_structure_types(&profile, block_name)
-                .unwrap()
-        };
+        for profile in profiles {
+            unsafe {
+                vk_profiles
+                    .get_profile_instance_extension_properties(&profile, block_name)
+                    .unwrap()
+            };
+            unsafe {
+                vk_profiles
+                    .get_profile_device_extension_properties(&profile, block_name)
+                    .unwrap()
+            };
+            unsafe {
+                vk_profiles
+                    .get_profile_feature_structure_types(&profile, block_name)
+                    .unwrap()
+            };
+            unsafe {
+                vk_profiles
+                    .get_profile_property_structure_types(&profile, block_name)
+                    .unwrap()
+            };
+            unsafe {
+                vk_profiles
+                    .get_profile_queue_family_structure_types(&profile, block_name)
+                    .unwrap()
+            };
+            unsafe {
+                vk_profiles
+                    .get_profile_formats(&profile, block_name)
+                    .unwrap()
+            };
+            unsafe {
+                vk_profiles
+                    .get_profile_property_structure_types(&profile, block_name)
+                    .unwrap()
+            };
+        }
     }
 
     #[test]

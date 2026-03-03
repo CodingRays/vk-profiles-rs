@@ -35,8 +35,10 @@ fn get_max_descriptor_set_update_after_bind_input_attachments(
     vk_profiles: &VulkanProfiles,
     profile: &vp::ProfileProperties,
 ) -> Result<Option<u32>, vk::Result> {
+    let block_name = None;
     // The maxDescriptorSetUpdateAfterBindInputAttachments propety can either be defined in the extension struct or the vulkan 1.2 properties struct so we need to check which one the profile supports.
-    let property_types = unsafe { vk_profiles.get_profile_property_structure_types(profile)? };
+    let property_types =
+        unsafe { vk_profiles.get_profile_property_structure_types(profile, block_name)? };
 
     if property_types.contains(&vk::StructureType::PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES) {
         // Can use the extension structure
@@ -44,7 +46,7 @@ fn get_max_descriptor_set_update_after_bind_input_attachments(
 
         // We need to wrap our properties in a [`vk::PhysicalDeviceProperties2`] instance.
         let mut wrapped = vk::PhysicalDeviceProperties2::default().push_next(&mut properties);
-        unsafe { vk_profiles.get_profile_properties(profile, &mut wrapped) };
+        unsafe { vk_profiles.get_profile_properties(profile, block_name, &mut wrapped) };
 
         Ok(Some(
             properties.max_descriptor_set_update_after_bind_input_attachments,
@@ -55,7 +57,7 @@ fn get_max_descriptor_set_update_after_bind_input_attachments(
 
         // We need to wrap our properties in a [`vk::PhysicalDeviceProperties2`] instance.
         let mut wrapped = vk::PhysicalDeviceProperties2::default().push_next(&mut properties);
-        unsafe { vk_profiles.get_profile_properties(profile, &mut wrapped) };
+        unsafe { vk_profiles.get_profile_properties(profile, block_name, &mut wrapped) };
 
         Ok(Some(
             properties.max_descriptor_set_update_after_bind_input_attachments,

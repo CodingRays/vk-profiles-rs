@@ -2,55 +2,10 @@
 //!
 //! See the vulkan profiles documentation for more details <https://vulkan.lunarg.com/doc/sdk/1.3.204.1/windows/profiles_api_library.html>
 
-use crate::prelude::*;
-
 use ash::vk;
-use std::ffi::CStr;
 use std::{ffi::c_void, ptr};
 
 const VP_MAX_PROFILE_NAME_SIZE: usize = 256;
-
-pub struct KhrRoadmap2022;
-impl KhrRoadmap2022 {
-    pub const NAME: &CStr = c"VP_KHR_roadmap_2022";
-    pub const SPEC_VERSION: u32 = 1;
-    pub const MIN_API_VERSION: u32 = vk::make_api_version(0, 1, 3, 204);
-
-    pub fn profile_properties() -> ProfileProperties {
-        ProfileProperties {
-            profile_name: c_char_array_from_cstr(Self::NAME).unwrap(),
-            spec_version: Self::SPEC_VERSION,
-        }
-    }
-}
-
-pub struct LunargDesktopBaseline2024;
-impl LunargDesktopBaseline2024 {
-    pub const NAME: &CStr = c"VP_LUNARG_desktop_baseline_2024";
-    pub const SPEC_VERSION: u32 = 1;
-    pub const MIN_API_VERSION: u32 = vk::make_api_version(0, 1, 2, 197);
-
-    pub fn profile_properties() -> ProfileProperties {
-        ProfileProperties {
-            profile_name: c_char_array_from_cstr(Self::NAME).unwrap(),
-            spec_version: Self::SPEC_VERSION,
-        }
-    }
-}
-
-pub struct LunargMinimumRequirements1_1;
-impl LunargMinimumRequirements1_1 {
-    pub const NAME: &CStr = c"VP_LUNARG_minimum_requirements_1_1";
-    pub const SPEC_VERSION: u32 = 1;
-    pub const MIN_API_VERSION: u32 = vk::make_api_version(0, 1, 1, 108);
-
-    pub fn profile_properties() -> ProfileProperties {
-        ProfileProperties {
-            profile_name: c_char_array_from_cstr(Self::NAME).unwrap(),
-            spec_version: Self::SPEC_VERSION,
-        }
-    }
-}
 
 // todo: new vulkan_profiles API
 // currently disabled (#ifdef VP_USE_OBJECT)
