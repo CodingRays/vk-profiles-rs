@@ -1,12 +1,12 @@
 //! Example showing setup code using a profile without any additional configuration.
 
-extern crate vk_profiles_rs;
+use std::ffi::c_char;
 
 use ash::vk;
 use vk_profiles_rs::{vp, VulkanProfiles};
 
 fn main() {
-    let profile = vp::LunargDesktopPortability2021::profile_properties();
+    let profile = vp::LunargDesktopBaseline2024::profile_properties();
 
     let entry = ash::Entry::linked();
     let vk_profiles = vk_profiles_rs::VulkanProfiles::linked();
@@ -41,22 +41,27 @@ fn main() {
 fn create_instance(
     entry: &ash::Entry,
     vk_profiles: &VulkanProfiles,
-    profile: &vp::ProfileProperties,
+    profile_properties: &vp::ProfileProperties,
 ) -> Result<ash::Instance, vk::Result> {
-    if !unsafe { vk_profiles.get_instance_profile_support(None, &profile)? } {
+    if !unsafe { vk_profiles.get_instance_profile_support(None, &profile_properties)? } {
         panic!(
             "Profile {:?} is not supported for instance creation.",
-            profile
+            profile_properties
         );
     }
 
-    let instance_info = vk::InstanceCreateInfo::default();
+    // LunargDesktopBaseline2024 has VK_KHR_swapchain as a device extension, which requires VK_KHR_SURFACE
+    let extensions: Vec<*const c_char> = vec![ash::khr::surface::NAME.as_ptr()];
+
+    let instance_info = vk::InstanceCreateInfo::default().enabled_extension_names(&extensions);
     let vp_instance_info = vp::InstanceCreateInfo {
+        p_enabled_full_profiles: profile_properties,
+        enabled_full_profile_count: 1,
         p_create_info: &instance_info,
-        p_profile: profile,
         ..Default::default()
     };
 
+    // vulkan_profiles will activate both manual and profile extensions
     unsafe { vk_profiles.create_instance(entry, &vp_instance_info, None) }
 }
 
@@ -64,14 +69,18 @@ fn create_instance(
 fn create_device(
     vk_profiles: &VulkanProfiles,
     instance: &ash::Instance,
-    profile: &vp::ProfileProperties,
+    profile_properties: &vp::ProfileProperties,
 ) -> Result<(ash::Device, u32, vk::Queue), vk::Result> {
     let physical_devices = unsafe { instance.enumerate_physical_devices()? };
 
     for physical_device in physical_devices {
         // We select the first device supporting the profile
         if unsafe {
-            vk_profiles.get_physical_device_profile_support(instance, physical_device, profile)?
+            vk_profiles.get_physical_device_profile_support(
+                instance,
+                physical_device,
+                &profile_properties,
+            )?
         } {
             // Find the graphics queue
             let queues =
@@ -92,17 +101,20 @@ fn create_device(
             let queue_info = vk::DeviceQueueCreateInfo {
                 queue_family_index: 0,
                 p_queue_priorities: queue_priorities.as_ptr(),
+                queue_count: queue_priorities.len() as u32,
                 ..Default::default()
             };
 
             let device_info = vk::DeviceCreateInfo {
                 p_queue_create_infos: std::ptr::addr_of!(queue_info),
+                queue_create_info_count: 1,
                 ..Default::default()
             };
 
             let vp_device_info = vp::DeviceCreateInfo {
                 p_create_info: &device_info,
-                p_profile: profile,
+                p_enabled_full_profiles: profile_properties,
+                enabled_full_profile_count: 1,
                 ..Default::default()
             };
 
@@ -116,5 +128,8 @@ fn create_device(
         }
     }
 
-    panic!("No device supporting profile {:?} found.", profile);
+    panic!(
+        "No device supporting profile {:?} found.",
+        profile_properties
+    );
 }
