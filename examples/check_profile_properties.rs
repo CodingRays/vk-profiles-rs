@@ -20,7 +20,7 @@ fn main() {
 
 fn print_profile_property_support(vk_profiles: &VulkanProfiles, profile: &vp::ProfileProperties) {
     if let Some(min) =
-        get_max_descriptor_set_update_after_bind_input_attachments(&vk_profiles, &profile).unwrap()
+        get_max_descriptor_set_update_after_bind_input_attachments(vk_profiles, profile).unwrap()
     {
         println!("Profile {:?} guarantees maxDescriptorSetUpdateAfterBindInputAttachments is at least {:?}", profile, min)
     } else {

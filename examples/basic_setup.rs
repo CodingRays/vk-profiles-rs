@@ -52,6 +52,19 @@ fn create_instance(
 
     // LunargDesktopBaseline2024 has VK_KHR_swapchain as a device extension, which requires VK_KHR_SURFACE
     let extensions: Vec<*const c_char> = vec![ash::khr::surface::NAME.as_ptr()];
+    // check if the extension is available
+    let available = unsafe { entry.enumerate_instance_extension_properties(None) }
+        .expect("Failed to enumerate instance extensions");
+    if !available
+        .iter()
+        .filter_map(|av| av.extension_name_as_c_str().ok())
+        .any(|av| av == ash::khr::surface::NAME)
+    {
+        panic!(
+            "Instance does not support required {:?} extension",
+            ash::khr::surface::NAME
+        );
+    }
 
     let instance_info = vk::InstanceCreateInfo::default().enabled_extension_names(&extensions);
     let vp_instance_info = vp::InstanceCreateInfo {
