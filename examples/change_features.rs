@@ -3,10 +3,11 @@
 extern crate vk_profiles_rs;
 
 use ash::vk;
-use vk_profiles_rs::{vp, VulkanProfiles};
+use vk_profiles_rs::{profiles, vp, VulkanProfiles};
 
 fn main() {
-    let profile = vp::LunargDesktopPortability2021::profile_properties();
+    // use vulkan 1.2
+    let profile = profiles::LunargMinimumRequirements1_2::profile_properties();
 
     let entry = ash::Entry::linked();
     let vk_profiles = vk_profiles_rs::VulkanProfiles::linked();
@@ -54,19 +55,20 @@ fn main() {
 fn create_instance(
     entry: &ash::Entry,
     vk_profiles: &VulkanProfiles,
-    profile: &vp::ProfileProperties,
+    profile_properties: &vp::ProfileProperties,
 ) -> Result<ash::Instance, vk::Result> {
-    if !unsafe { vk_profiles.get_instance_profile_support(None, &profile)? } {
+    if !unsafe { vk_profiles.get_instance_profile_support(None, &profile_properties)? } {
         panic!(
             "Profile {:?} is not supported for instance creation.",
-            profile
+            profile_properties
         );
     }
 
     let instance_info = vk::InstanceCreateInfo::default();
     let vp_instance_info = vp::InstanceCreateInfo {
         p_create_info: &instance_info,
-        p_profile: profile,
+        p_enabled_full_profiles: profile_properties,
+        enabled_full_profile_count: 1,
         ..Default::default()
     };
 
@@ -79,27 +81,30 @@ fn create_instance(
 fn create_device(
     vk_profiles: &VulkanProfiles,
     instance: &ash::Instance,
-    profile: &vp::ProfileProperties,
+    profile_properties: &vp::ProfileProperties,
 ) -> Result<(ash::Device, u32, vk::Queue), vk::Result> {
     let physical_devices = unsafe { instance.enumerate_physical_devices()? };
 
     for physical_device in physical_devices {
         // We select the first device supporting the profile
         if unsafe {
-            vk_profiles.get_physical_device_profile_support(instance, physical_device, profile)?
+            vk_profiles.get_physical_device_profile_support(
+                instance,
+                physical_device,
+                profile_properties,
+            )?
         } {
             // Need to make sure the device supports timeline semaphores
-            let mut timeline_features = vk::PhysicalDeviceTimelineSemaphoreFeatures::default();
-            let mut features =
-                vk::PhysicalDeviceFeatures2::default().push_next(&mut timeline_features);
+            let mut features12 = vk::PhysicalDeviceVulkan12Features::default();
+            let mut features = vk::PhysicalDeviceFeatures2::default().push_next(&mut features12);
 
             unsafe { instance.get_physical_device_features2(physical_device, &mut features) };
 
-            if timeline_features.timeline_semaphore == vk::FALSE {
+            if features12.timeline_semaphore == vk::FALSE {
                 // Device does not support timeline semaphores
                 continue;
             }
-            // At this point you may want to disable features of the struct you dont need. Timeline semaphores however only has one feature so this is not neccessary here.
+            // At this point you may want to disable features of the struct you dont need. Timeline semaphores however only has one feature so this is not necessary here.
 
             // Find the graphics queue
             let queues =
@@ -120,20 +125,26 @@ fn create_device(
             let queue_info = vk::DeviceQueueCreateInfo {
                 queue_family_index: 0,
                 p_queue_priorities: queue_priorities.as_ptr(),
+                queue_count: queue_priorities.len() as u32,
                 ..Default::default()
             };
 
+            let mut to_enable_features = vk::PhysicalDeviceVulkan12Features {
+                timeline_semaphore: vk::TRUE,
+                ..Default::default()
+            };
             let device_info = vk::DeviceCreateInfo {
-                p_queue_create_infos: std::ptr::addr_of!(queue_info),
+                p_queue_create_infos: &queue_info,
+                queue_create_info_count: 1,
                 ..Default::default()
             }
-            .push_next(&mut timeline_features);
+            .push_next(&mut to_enable_features);
 
             let vp_device_info = vp::DeviceCreateInfo {
-                // Need to add the OVERRIDE_FEATURES flag to make sure our changed timeline semaphore features gets used
-                flags: vp::DeviceCreateFlagBits::OVERRIDE_FEATURES,
                 p_create_info: &device_info,
-                p_profile: profile,
+                p_enabled_full_profiles: profile_properties,
+                enabled_full_profile_count: 1,
+                ..Default::default()
             };
 
             let device = unsafe {
@@ -148,6 +159,6 @@ fn create_device(
 
     panic!(
         "No device supporting profile {:?} and timeline semaphores found.",
-        profile
+        profile_properties
     );
 }

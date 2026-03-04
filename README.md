@@ -4,12 +4,16 @@ Rust bindings for the [Vulkan Profiles](https://github.com/KhronosGroup/Vulkan-P
 
 **Note: The vulkan loader must be statically linked in ash**
 
+[![Crates.io Version](https://img.shields.io/crates/v/vk-profiles-rs.svg)](https://crates.io/crates/vk-profiles-rs)
+[![Documentation](https://docs.rs/vk-profiles-rs/badge.svg)](https://docs.rs/vk-profiles-rs)
+[![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE-MIT)
+[![LICENSE](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE-APACHE)
+
 ## Additional dependencies
 
-These are required to build the vulkan profiles library
+These are required to build the Vulkan profiles library
 - A C++ compiler
-- CMake
-- Vulkan SDK. Only the vulkan headers are required for the build.
+- Vulkan SDK. Only the Vulkan headers are required for the build.
 
 ## License
 

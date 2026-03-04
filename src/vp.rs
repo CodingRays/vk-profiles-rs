@@ -2,83 +2,38 @@
 //!
 //! See the vulkan profiles documentation for more details <https://vulkan.lunarg.com/doc/sdk/1.3.204.1/windows/profiles_api_library.html>
 
-use crate::prelude::*;
-
 use ash::vk;
-use std::ffi::c_void;
+use std::{ffi::c_void, ptr};
 
-pub struct AndroidBaseline2021;
-impl AndroidBaseline2021 {
-    pub const NAME: &'static ::std::ffi::CStr =
-        unsafe { ::std::ffi::CStr::from_bytes_with_nul_unchecked(b"VP_ANDROID_baseline_2021\0") };
+const VP_MAX_PROFILE_NAME_SIZE: usize = 256;
 
-    pub const SPEC_VERSION: u32 = 1;
-    pub const MIN_API_VERSION: u32 = vk::make_api_version(0, 1, 0, 68);
+// todo: new vulkan_profiles API
+// currently disabled (#ifdef VP_USE_OBJECT)
+// #[repr(transparent)]
+// #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+// pub struct CapabilitiesCreateFlagBits(pub(crate) vk::Flags);
+// ash::vk_bitflags_wrapped!(CapabilitiesCreateFlagBits, vk::Flags);
 
-    pub fn profile_properties() -> ProfileProperties {
-        ProfileProperties {
-            profile_name: c_char_array_from_cstr(Self::NAME).unwrap(),
-            spec_version: Self::SPEC_VERSION,
-        }
-    }
-}
+// impl CapabilitiesCreateFlagBits {
+//     pub const VP_PROFILE_CREATE_STATIC_BIT: Self = Self(1 << 0);
+// }
 
-pub struct KhrRoadmap2022;
-impl KhrRoadmap2022 {
-    pub const NAME: &'static ::std::ffi::CStr =
-        unsafe { ::std::ffi::CStr::from_bytes_with_nul_unchecked(b"VP_KHR_roadmap_2022\0") };
-
-    pub const SPEC_VERSION: u32 = 1;
-    pub const MIN_API_VERSION: u32 = vk::make_api_version(0, 1, 3, 204);
-
-    pub fn profile_properties() -> ProfileProperties {
-        ProfileProperties {
-            profile_name: c_char_array_from_cstr(Self::NAME).unwrap(),
-            spec_version: Self::SPEC_VERSION,
-        }
-    }
-}
-
-pub struct LunargDesktopPortability2021;
-impl LunargDesktopPortability2021 {
-    pub const NAME: &'static ::std::ffi::CStr = unsafe {
-        ::std::ffi::CStr::from_bytes_with_nul_unchecked(b"VP_LUNARG_desktop_portability_2021\0")
-    };
-
-    pub const SPEC_VERSION: u32 = 1;
-    pub const MIN_API_VERSION: u32 = vk::make_api_version(0, 1, 1, 142);
-
-    pub fn profile_properties() -> ProfileProperties {
-        ProfileProperties {
-            profile_name: c_char_array_from_cstr(Self::NAME).unwrap(),
-            spec_version: Self::SPEC_VERSION,
-        }
-    }
-}
-
-pub struct LunargDesktopPortability2021Subset;
-impl LunargDesktopPortability2021Subset {
-    pub const NAME: &'static ::std::ffi::CStr = unsafe {
-        ::std::ffi::CStr::from_bytes_with_nul_unchecked(
-            b"VP_LUNARG_desktop_portability_2021_subset\0",
-        )
-    };
-
-    pub const SPEC_VERSION: u32 = 1;
-    pub const MIN_API_VERSION: u32 = vk::make_api_version(0, 1, 1, 154);
-
-    pub fn profile_properties() -> ProfileProperties {
-        ProfileProperties {
-            profile_name: c_char_array_from_cstr(Self::NAME).unwrap(),
-            spec_version: Self::SPEC_VERSION,
-        }
-    }
-}
+// #[repr(C)]
+// #[derive(Copy, Clone)]
+// pub struct CapabilitiesCreateInfo {
+//     pub flags: CapabilitiesCreateFlagBits,
+//     pub api_version: u32,
+//     // todo: this should include a list of pointers to the Vulkan library
+//     // see VpVulkanFunctions
+//     // this can probably then work with Ash set to dynamic linking (loaded)
+//     // for now this is just always set to nullptr
+//     pub p_vulkan_functions: *const usize
+// }
 
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct ProfileProperties {
-    pub profile_name: [std::os::raw::c_char; 256],
+    pub profile_name: [std::os::raw::c_char; VP_MAX_PROFILE_NAME_SIZE],
     pub spec_version: u32,
 }
 #[cfg(feature = "debug")]
@@ -101,33 +56,70 @@ impl ::std::default::Default for ProfileProperties {
     }
 }
 
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct BlockProperties {
+    pub profiles: ProfileProperties,
+    pub api_version: u32,
+    pub block_name: [std::os::raw::c_char; VP_MAX_PROFILE_NAME_SIZE],
+}
+
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct InstanceCreateFlagBits(pub(crate) vk::Flags);
 ash::vk_bitflags_wrapped!(InstanceCreateFlagBits, vk::Flags);
 
-impl InstanceCreateFlagBits {
-    pub const MERGE_EXTENSIONS: Self = Self(0x00000001);
-    pub const OVERRIDE_EXTENSIONS: Self = Self(0x00000002);
-}
+// nothing here
+impl InstanceCreateFlagBits {}
 
 #[repr(C)]
 #[cfg_attr(feature = "debug", derive(Debug))]
 #[derive(Copy, Clone)]
 pub struct InstanceCreateInfo<'a> {
     pub p_create_info: *const vk::InstanceCreateInfo<'a>,
-    pub p_profile: *const ProfileProperties,
     pub flags: InstanceCreateFlagBits,
+    pub enabled_full_profile_count: u32,
+    pub p_enabled_full_profiles: *const ProfileProperties,
+    pub enabled_profile_block_count: u32,
+    pub p_enabled_profile_blocks: *const BlockProperties,
 }
 impl ::std::default::Default for InstanceCreateInfo<'_> {
     fn default() -> Self {
         Self {
-            p_create_info: std::ptr::null(),
-            p_profile: std::ptr::null(),
+            p_create_info: ptr::null(),
             flags: InstanceCreateFlagBits::default(),
+            enabled_full_profile_count: 0,
+            p_enabled_full_profiles: ptr::null(),
+            enabled_profile_block_count: 0,
+            p_enabled_profile_blocks: ptr::null(),
         }
     }
 }
+impl<'a> InstanceCreateInfo<'a> {
+    #[inline]
+    pub fn create_info(mut self, create_info: &'a vk::InstanceCreateInfo<'a>) -> Self {
+        self.p_create_info = create_info;
+        self
+    }
+    #[inline]
+    pub fn flags(mut self, flags: InstanceCreateFlagBits) -> Self {
+        self.flags = flags;
+        self
+    }
+    pub fn enabled_full_profiles(mut self, enabled_full_profiles: &'a [ProfileProperties]) -> Self {
+        self.enabled_full_profile_count = enabled_full_profiles.len() as _;
+        self.p_enabled_full_profiles = enabled_full_profiles.as_ptr();
+        self
+    }
+    pub fn enabled_profile_blocks(mut self, enabled_profile_blocks: &'a [BlockProperties]) -> Self {
+        self.enabled_profile_block_count = enabled_profile_blocks.len() as _;
+        self.p_enabled_profile_blocks = enabled_profile_blocks.as_ptr();
+        self
+    }
+}
+
+// VpCapabilities currently not used
+// define_handle!(Capabilities, UNKNOWN);
 
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -135,13 +127,9 @@ pub struct DeviceCreateFlagBits(pub(crate) vk::Flags);
 ash::vk_bitflags_wrapped!(DeviceCreateFlagBits, vk::Flags);
 
 impl DeviceCreateFlagBits {
-    pub const MERGE_EXTENSIONS: Self = Self(0x00000001);
-    pub const OVERRIDE_EXTENSIONS: Self = Self(0x00000002);
-    pub const OVERRIDE_FEATURES: Self = Self(0x00000008);
-    pub const OVERRIDE_ALL_FEATURES: Self = Self(0x00000010);
-    pub const DISABLE_ROBUST_BUFFER_ACCESS: Self = Self(0x00000020);
-    pub const DISABLE_ROBUST_IMAGE_ACCESS: Self = Self(0x00000040);
-    pub const DISABLE_ROBUST_ACCESS: Self = Self(0x00000020 | 0x00000040);
+    pub const DISABLE_ROBUST_BUFFER_ACCESS: Self = Self(0x0000001);
+    pub const DISABLE_ROBUST_IMAGE_ACCESS: Self = Self(0x0000002);
+    pub const DISABLE_ROBUST_ACCESS: Self = Self(0x0000001 | 0x0000002);
 }
 
 #[repr(C)]
@@ -149,16 +137,44 @@ impl DeviceCreateFlagBits {
 #[derive(Copy, Clone)]
 pub struct DeviceCreateInfo<'a> {
     pub p_create_info: *const vk::DeviceCreateInfo<'a>,
-    pub p_profile: *const ProfileProperties,
     pub flags: DeviceCreateFlagBits,
+    pub enabled_full_profile_count: u32,
+    pub p_enabled_full_profiles: *const ProfileProperties,
+    pub enabled_profile_block_count: u32,
+    pub p_enabled_profile_blocks: *const BlockProperties,
 }
 impl ::std::default::Default for DeviceCreateInfo<'_> {
     fn default() -> Self {
         Self {
-            p_create_info: std::ptr::null(),
-            p_profile: std::ptr::null(),
+            p_create_info: ptr::null(),
             flags: DeviceCreateFlagBits::default(),
+            enabled_full_profile_count: 0,
+            p_enabled_full_profiles: ptr::null(),
+            enabled_profile_block_count: 0,
+            p_enabled_profile_blocks: ptr::null(),
         }
+    }
+}
+impl<'a> DeviceCreateInfo<'a> {
+    #[inline]
+    pub fn create_info(mut self, create_info: &'a vk::DeviceCreateInfo<'a>) -> Self {
+        self.p_create_info = create_info;
+        self
+    }
+    #[inline]
+    pub fn flags(mut self, flags: DeviceCreateFlagBits) -> Self {
+        self.flags = flags;
+        self
+    }
+    pub fn enabled_full_profiles(mut self, enabled_full_profiles: &'a [ProfileProperties]) -> Self {
+        self.enabled_full_profile_count = enabled_full_profiles.len() as _;
+        self.p_enabled_full_profiles = enabled_full_profiles.as_ptr();
+        self
+    }
+    pub fn enabled_profile_blocks(mut self, enabled_profile_blocks: &'a [BlockProperties]) -> Self {
+        self.enabled_profile_block_count = enabled_profile_blocks.len() as _;
+        self.p_enabled_profile_blocks = enabled_profile_blocks.as_ptr();
+        self
     }
 }
 
@@ -256,6 +272,7 @@ pub type PFN_vpCreateDevice = unsafe extern "C" fn(
 #[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfileInstanceExtensionProperties = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
+    pBlockName: *const std::ffi::c_char,
     pPropertyCount: *mut u32,
     pProperties: *mut vk::ExtensionProperties,
 ) -> vk::Result;
@@ -263,28 +280,37 @@ pub type PFN_vpGetProfileInstanceExtensionProperties = unsafe extern "C" fn(
 #[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfileDeviceExtensionProperties = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
+    pBlockName: *const std::ffi::c_char,
     pPropertyCount: *mut u32,
     pProperties: *mut vk::ExtensionProperties,
 ) -> vk::Result;
 
 #[allow(non_camel_case_types, non_snake_case)]
-pub type PFN_vpGetProfileFeatures =
-    unsafe extern "C" fn(pProfile: *const ProfileProperties, pNext: *mut c_void);
+pub type PFN_vpGetProfileFeatures = unsafe extern "C" fn(
+    pProfile: *const ProfileProperties,
+    pBlockName: *const std::ffi::c_char,
+    pNext: *mut c_void,
+);
 
 #[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfileFeatureStructureTypes = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
+    pBlockName: *const std::ffi::c_char,
     pStructureTypeCount: *mut u32,
     pStructureTypes: *mut vk::StructureType,
 ) -> vk::Result;
 
 #[allow(non_camel_case_types, non_snake_case)]
-pub type PFN_vpGetProfileProperties =
-    unsafe extern "C" fn(pProfile: *const ProfileProperties, pNext: *mut c_void);
+pub type PFN_vpGetProfileProperties = unsafe extern "C" fn(
+    pProfile: *const ProfileProperties,
+    pBlockName: *const std::ffi::c_char,
+    pNext: *mut c_void,
+);
 
 #[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfilePropertyStructureTypes = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
+    pBlockName: *const std::ffi::c_char,
     pStructureTypeCount: *mut u32,
     pStructureTypes: *mut vk::StructureType,
 ) -> vk::Result;
@@ -292,6 +318,7 @@ pub type PFN_vpGetProfilePropertyStructureTypes = unsafe extern "C" fn(
 #[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfileQueueFamilyProperties = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
+    pBlockName: *const std::ffi::c_char,
     pPropertyCount: *mut u32,
     pProperties: *mut vk::QueueFamilyProperties2,
 ) -> vk::Result;
@@ -299,6 +326,7 @@ pub type PFN_vpGetProfileQueueFamilyProperties = unsafe extern "C" fn(
 #[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfileQueueFamilyStructureTypes = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
+    pBlockName: *const std::ffi::c_char,
     pStructureTypeCount: *mut u32,
     pStructureTypes: *mut vk::StructureType,
 ) -> vk::Result;
@@ -306,6 +334,7 @@ pub type PFN_vpGetProfileQueueFamilyStructureTypes = unsafe extern "C" fn(
 #[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfileFormats = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
+    pBlockName: *const std::ffi::c_char,
     pFormatCount: *mut u32,
     pFormats: *mut vk::Format,
 ) -> vk::Result;
@@ -313,6 +342,7 @@ pub type PFN_vpGetProfileFormats = unsafe extern "C" fn(
 #[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfileFormatProperties = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
+    pBlockName: *const std::ffi::c_char,
     format: vk::Format,
     pNext: *mut c_void,
 );
@@ -320,6 +350,7 @@ pub type PFN_vpGetProfileFormatProperties = unsafe extern "C" fn(
 #[allow(non_camel_case_types, non_snake_case)]
 pub type PFN_vpGetProfileFormatStructureTypes = unsafe extern "C" fn(
     pProfile: *const ProfileProperties,
+    pBlockName: *const std::ffi::c_char,
     pStructureTypeCount: *mut u32,
     pStructureTypes: *mut vk::StructureType,
 ) -> vk::Result;
@@ -334,6 +365,7 @@ mod sys {
 
     #[link(name = "vkprofiles", kind = "static")]
     extern "C" {
+
         pub fn vpGetProfiles(
             pPropertyCount: *mut u32,
             pProperties: *mut ProfileProperties,
@@ -373,58 +405,75 @@ mod sys {
 
         pub fn vpGetProfileInstanceExtensionProperties(
             pProfile: *const ProfileProperties,
+            pBlockName: *const std::ffi::c_char,
             pPropertyCount: *mut u32,
             pProperties: *mut vk::ExtensionProperties,
         ) -> vk::Result;
 
         pub fn vpGetProfileDeviceExtensionProperties(
             pProfile: *const ProfileProperties,
+            pBlockName: *const std::ffi::c_char,
             pPropertyCount: *mut u32,
             pProperties: *mut vk::ExtensionProperties,
         ) -> vk::Result;
 
-        pub fn vpGetProfileFeatures(pProfile: *const ProfileProperties, pNext: *mut c_void);
+        pub fn vpGetProfileFeatures(
+            pProfile: *const ProfileProperties,
+            pBlockName: *const std::ffi::c_char,
+            pNext: *mut c_void,
+        );
 
         pub fn vpGetProfileFeatureStructureTypes(
             pProfile: *const ProfileProperties,
+            pBlockName: *const std::ffi::c_char,
             pStructureTypeCount: *mut u32,
             pStructureTypes: *mut vk::StructureType,
         ) -> vk::Result;
 
-        pub fn vpGetProfileProperties(pProfile: *const ProfileProperties, pNext: *mut c_void);
+        pub fn vpGetProfileProperties(
+            pProfile: *const ProfileProperties,
+            pBlockName: *const std::ffi::c_char,
+            pNext: *mut c_void,
+        );
 
         pub fn vpGetProfilePropertyStructureTypes(
             pProfile: *const ProfileProperties,
+            pBlockName: *const std::ffi::c_char,
             pStructureTypeCount: *mut u32,
             pStructureTypes: *mut vk::StructureType,
         ) -> vk::Result;
 
         pub fn vpGetProfileQueueFamilyProperties(
             pProfile: *const ProfileProperties,
+            pBlockName: *const std::ffi::c_char,
             pPropertyCount: *mut u32,
             pProperties: *mut vk::QueueFamilyProperties2,
         ) -> vk::Result;
 
         pub fn vpGetProfileQueueFamilyStructureTypes(
             pProfile: *const ProfileProperties,
+            pBlockName: *const std::ffi::c_char,
             pStructureTypeCount: *mut u32,
             pStructureTypes: *mut vk::StructureType,
         ) -> vk::Result;
 
         pub fn vpGetProfileFormats(
             pProfile: *const ProfileProperties,
+            pBlockName: *const std::ffi::c_char,
             pFormatCount: *mut u32,
             pFormats: *mut vk::Format,
         ) -> vk::Result;
 
         pub fn vpGetProfileFormatProperties(
             pProfile: *const ProfileProperties,
+            pBlockName: *const std::ffi::c_char,
             format: vk::Format,
             pNext: *mut c_void,
         );
 
         pub fn vpGetProfileFormatStructureTypes(
             pProfile: *const ProfileProperties,
+            pBlockName: *const std::ffi::c_char,
             pStructureTypeCount: *mut u32,
             pStructureTypes: *mut vk::StructureType,
         ) -> vk::Result;

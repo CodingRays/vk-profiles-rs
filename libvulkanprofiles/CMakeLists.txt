@@ -1,5 +1,5 @@
-project( vkprofiles )
 cmake_minimum_required( VERSION 3.13 )
+project( vkprofiles )
 include(FetchContent)
 include(FindVulkan)
 
@@ -9,10 +9,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 FetchContent_Declare(
     VkProfiles
     GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Profiles.git
-    GIT_TAG "v1.3.208"
+    GIT_TAG "v1.4.335"
 )
 FetchContent_GetProperties(VkProfiles)
-FetchContent_Populate(VkProfiles)
+FetchContent_MakeAvailable(VkProfiles)
 
 add_library(${PROJECT_NAME} STATIC ${vkprofiles_SOURCE_DIR}/library/source/vulkan_profiles.cpp)
 
