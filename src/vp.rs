@@ -95,6 +95,28 @@ impl ::std::default::Default for InstanceCreateInfo<'_> {
         }
     }
 }
+impl<'a> InstanceCreateInfo<'a> {
+    #[inline]
+    pub fn create_info(mut self, create_info: &'a vk::InstanceCreateInfo<'a>) -> Self {
+        self.p_create_info = create_info;
+        self
+    }
+    #[inline]
+    pub fn flags(mut self, flags: InstanceCreateFlagBits) -> Self {
+        self.flags = flags;
+        self
+    }
+    pub fn enabled_full_profiles(mut self, enabled_full_profiles: &'a [ProfileProperties]) -> Self {
+        self.enabled_full_profile_count = enabled_full_profiles.len() as _;
+        self.p_enabled_full_profiles = enabled_full_profiles.as_ptr();
+        self
+    }
+    pub fn enabled_profile_blocks(mut self, enabled_profile_blocks: &'a [BlockProperties]) -> Self {
+        self.enabled_profile_block_count = enabled_profile_blocks.len() as _;
+        self.p_enabled_profile_blocks = enabled_profile_blocks.as_ptr();
+        self
+    }
+}
 
 // VpCapabilities currently not used
 // define_handle!(Capabilities, UNKNOWN);
@@ -131,6 +153,28 @@ impl ::std::default::Default for DeviceCreateInfo<'_> {
             enabled_profile_block_count: 0,
             p_enabled_profile_blocks: ptr::null(),
         }
+    }
+}
+impl<'a> DeviceCreateInfo<'a> {
+    #[inline]
+    pub fn create_info(mut self, create_info: &'a vk::DeviceCreateInfo<'a>) -> Self {
+        self.p_create_info = create_info;
+        self
+    }
+    #[inline]
+    pub fn flags(mut self, flags: DeviceCreateFlagBits) -> Self {
+        self.flags = flags;
+        self
+    }
+    pub fn enabled_full_profiles(mut self, enabled_full_profiles: &'a [ProfileProperties]) -> Self {
+        self.enabled_full_profile_count = enabled_full_profiles.len() as _;
+        self.p_enabled_full_profiles = enabled_full_profiles.as_ptr();
+        self
+    }
+    pub fn enabled_profile_blocks(mut self, enabled_profile_blocks: &'a [BlockProperties]) -> Self {
+        self.enabled_profile_block_count = enabled_profile_blocks.len() as _;
+        self.p_enabled_profile_blocks = enabled_profile_blocks.as_ptr();
+        self
     }
 }
 

@@ -4,24 +4,21 @@
 //! ## Examples
 //! ```no_run
 //! use ash::vk;
-//! use vk_profiles_rs::vp;
+//! use vk_profiles_rs::{profiles, vp};
 //!
 //! # fn main() -> ash::prelude::VkResult<()> {
 //! // Load the function pointers
 //! let vk_profiles = vk_profiles_rs::VulkanProfiles::linked();
 //!
-//! // Select the lunarg desktop portability 2021 profile and test instance support
-//! let profile = vp::LunargDesktopPortability2021::profile_properties();
+//! // Select the LunarG minimum Vulkan 1.3 profile and test instance support
+//! let profile = profiles::LunargMinimumRequirements1_3::profile_properties();
 //! assert!(unsafe { vk_profiles.get_instance_profile_support(None, &profile)? });
 //!
-//! let profile = vp::LunargDesktopPortability2021::profile_properties();
-//!
 //! let instance_info = vk::InstanceCreateInfo::default();
-//! let vp_instance_info = vp::InstanceCreateInfo {
-//!     p_create_info: &instance_info,
-//!     p_profile: &profile,
-//!     ..Default::default()
-//! };
+//! let profiles = [profile];
+//! let vp_instance_info = vp::InstanceCreateInfo::default()
+//!     .create_info(&instance_info)
+//!     .enabled_full_profiles(&profiles);
 //!
 //! let entry = ash::Entry::linked();
 //!
@@ -482,6 +479,7 @@ mod tests {
 
         let vp_device_info = vp::DeviceCreateInfo {
             p_create_info: &device_info,
+            flags: vp::DeviceCreateFlagBits::DISABLE_ROBUST_ACCESS,
             p_enabled_full_profiles: &profile,
             enabled_full_profile_count: 1,
             ..Default::default()

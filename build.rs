@@ -7,6 +7,7 @@ fn main() {
 
     cc::Build::new()
         .cpp(true)
+        .std("c++17")
         .file("libvulkanprofiles/vulkan_profiles.cpp")
         .include("libvulkanprofiles/include")
         .cpp_link_stdlib("stdc++")
