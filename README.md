@@ -12,17 +12,23 @@ Rust bindings for the [Vulkan Profiles](https://github.com/KhronosGroup/Vulkan-P
 ## Additional dependencies
 
 These are required to build the Vulkan profiles library
-- A C++ compiler
+
+- CMake 3.22.1
+- Python 3.7.2 or later.
+- A C++ compiler.
+- Git.
 - Vulkan SDK. Only the Vulkan headers are required for the build.
+
+See [the inner library build requirements](https://github.com/KhronosGroup/Vulkan-Profiles/blob/v1.4.335/BUILD.md) for more information.
 
 ## License
 
 Licensed under either of
 
- * Apache License, Version 2.0
-   ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
- * MIT license
-   ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+- Apache License, Version 2.0
+  ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+- MIT license
+  ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
 
 at your option.
 
