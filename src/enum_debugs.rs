@@ -19,7 +19,11 @@ impl std::fmt::Debug for DeviceCreateFlagBits {
             ),
             (
                 DeviceCreateFlagBits::DISABLE_ROBUST_IMAGE_ACCESS.0,
-                "DISABLE_ROBUST_BUFFER_ACCESS",
+                "DISABLE_ROBUST_IMAGE_ACCESS",
+            ),
+            (
+                DeviceCreateFlagBits::DISABLE_ROBUST_ACCESS.0,
+                "DISABLE_ROBUST_ACCESS",
             ),
         ];
         debug_flags(f, KNOWN, self.0)
