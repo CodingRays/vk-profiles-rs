@@ -104,7 +104,6 @@ fn create_device(
                 // Device does not support timeline semaphores
                 continue;
             }
-            // At this point you may want to disable features of the struct you dont need. Timeline semaphores however only has one feature so this is not necessary here.
 
             // Find the graphics queue
             let queues =
@@ -129,6 +128,8 @@ fn create_device(
                 ..Default::default()
             };
 
+            // enable the additional features you need
+            // these will get merged together with the features required by the profiles
             let mut to_enable_features = vk::PhysicalDeviceVulkan12Features {
                 timeline_semaphore: vk::TRUE,
                 ..Default::default()

@@ -3,18 +3,18 @@ fn main() {}
 
 #[cfg(not(feature = "docs-rs"))]
 fn main() {
-    // let dst = cmake::Config::new("libvulkanprofiles").build();
+    // generate the Vulkan-Profiles c++ files and headers
+    cmake::Config::new("Vulkan-Profiles")
+        .define("UPDATE_DEPS", "ON")
+        .out_dir("Vulkan-Profiles/build")
+        .build();
 
-    cc::Build::new()
-        .cpp(true)
-        .std("c++17")
-        .file("libvulkanprofiles/vulkan_profiles.cpp")
-        .include("libvulkanprofiles/include")
-        .cpp_link_stdlib("stdc++")
-        .flags(["-Wno-missing-field-initializers", "-Wno-type-limits"])
-        .compile("vkprofiles");
+    // compile and add the files as a library
+    let dst = cmake::Config::new(".").build();
 
-    // println!("cargo:rustc-link-search=native={}", dst.display());
+    // link the library
+    println!("cargo:rustc-link-search=native={}", dst.display());
     println!("cargo:rustc-link-lib=static=vkprofiles");
-    println!("cargo::rerun-if-changed=libvulkanprofiles/vulkan_profiles.cpp");
+
+    println!("cargo::rerun-if-changed=Vulkan-Profiles/library/source/vulkan_profiles.cpp");
 }
