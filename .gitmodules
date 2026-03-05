@@ -1,0 +1,4 @@
+[submodule "Vulkan-Profiles"]
+	path = Vulkan-Profiles
+	url = https://github.com/KhronosGroup/Vulkan-Profiles
+	branch = v1.4.335
