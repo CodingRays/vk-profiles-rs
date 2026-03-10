@@ -68,7 +68,7 @@ pub(crate) fn debug_flags<Value: Into<u64> + Copy>(
 /// Creates a fixed size c_char array from a CStr.
 ///
 /// If the size of the string is too large for the array None is returned.
-pub(crate) fn c_char_array_from_cstr<const N: usize>(
+pub(crate) const fn c_char_array_from_cstr<const N: usize>(
     data: &::std::ffi::CStr,
 ) -> Option<[::std::os::raw::c_char; N]> {
     let mut result: [::std::os::raw::c_char; N] = unsafe { ::std::mem::zeroed() }; // Default not implemented for arbitrary length
@@ -78,9 +78,10 @@ pub(crate) fn c_char_array_from_cstr<const N: usize>(
     if data.len() > N {
         return None;
     }
+    let data_ptr = data.as_ptr() as *const ::std::os::raw::c_char;
 
-    for (i, c) in data.iter().enumerate() {
-        result[i] = *c as ::std::os::raw::c_char;
+    unsafe {
+        std::ptr::copy_nonoverlapping(data_ptr, result.as_mut_ptr(), data.len());
     }
 
     Some(result)

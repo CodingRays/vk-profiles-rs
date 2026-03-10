@@ -12,7 +12,7 @@ macro_rules! profile {
             pub const SPEC_VERSION: u32 = $spec;
             pub const MIN_API_VERSION: u32 = $min_api;
 
-            pub fn profile_properties() -> ProfileProperties {
+            pub const fn profile_properties() -> ProfileProperties {
                 ProfileProperties {
                     profile_name: c_char_array_from_cstr(Self::NAME).unwrap(),
                     spec_version: Self::SPEC_VERSION,
