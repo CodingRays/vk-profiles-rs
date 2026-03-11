@@ -342,21 +342,23 @@ mod tests {
     fn create_instance(
         entry: &ash::Entry,
         vk_profiles: &VulkanProfiles,
-    ) -> (vp::ProfileProperties, ash::Instance) {
-        let profile = profiles::LunargMinimumRequirements1_1::profile_properties();
-        assert!(unsafe {
-            vk_profiles
-                .get_instance_profile_support(None, &profile)
-                .unwrap()
-        });
+    ) -> ([vp::ProfileProperties; 2], ash::Instance) {
+        let profiles = [
+            profiles::KhrRoadmap2024::profile_properties(),
+            profiles::LunargMinimumRequirements1_3::profile_properties(),
+        ];
+        for profile in profiles {
+            assert!(unsafe {
+                vk_profiles
+                    .get_instance_profile_support(None, &profile)
+                    .unwrap()
+            });
+        }
 
         let instance_info = vk::InstanceCreateInfo::default();
-        let vp_instance_info = vp::InstanceCreateInfo {
-            p_enabled_full_profiles: &profile,
-            enabled_full_profile_count: 1,
-            p_create_info: &instance_info,
-            ..Default::default()
-        };
+        let vp_instance_info = vp::InstanceCreateInfo::default()
+            .enabled_full_profiles(&profiles)
+            .create_info(&instance_info);
 
         let instance = unsafe {
             vk_profiles
@@ -364,7 +366,7 @@ mod tests {
                 .unwrap()
         };
 
-        (profile, instance)
+        (profiles, instance)
     }
 
     #[test]
@@ -448,7 +450,7 @@ mod tests {
         let vk_profiles = VulkanProfiles::linked();
         let entry = ash::Entry::linked();
 
-        let (profile, instance) = create_instance(&entry, &vk_profiles);
+        let (profiles, instance) = create_instance(&entry, &vk_profiles);
 
         let physical_device = unsafe { instance.enumerate_physical_devices().unwrap() }
             .into_iter()
@@ -457,11 +459,19 @@ mod tests {
                 println!("PhysicalDevice: {:?}", unsafe {
                     std::ffi::CStr::from_ptr(props.device_name.as_ptr())
                 });
-                unsafe {
-                    vk_profiles
-                        .get_physical_device_profile_support(&instance, *device, &profile)
-                        .expect("Error queueing physical device support")
+                let mut unsupported = false;
+                for profile in profiles {
+                    let supports_this = unsafe {
+                        vk_profiles
+                            .get_physical_device_profile_support(&instance, *device, &profile)
+                            .expect("Error queueing physical device support")
+                    };
+                    if !supports_this {
+                        unsupported = true;
+                        break;
+                    }
                 }
+                !unsupported
             })
             .expect("Failed to find suitable physical device");
 
@@ -477,14 +487,10 @@ mod tests {
             ..Default::default()
         };
 
-        let vp_device_info = vp::DeviceCreateInfo {
-            p_create_info: &device_info,
-            flags: vp::DeviceCreateFlagBits::DISABLE_ROBUST_ACCESS,
-            p_enabled_full_profiles: &profile,
-            enabled_full_profile_count: 1,
-            ..Default::default()
-        };
-
+        let vp_device_info = vp::DeviceCreateInfo::default()
+            .enabled_full_profiles(&profiles)
+            .create_info(&device_info)
+            .flags(vp::DeviceCreateFlagBits::DISABLE_ROBUST_ACCESS);
         let device = unsafe {
             vk_profiles
                 .create_device(&instance, physical_device, &vp_device_info, None)
