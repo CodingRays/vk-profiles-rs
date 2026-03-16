@@ -49,18 +49,8 @@ pub mod vp;
 use ash::prelude::VkResult;
 use ash::vk;
 use prelude::*;
-use std::{
-    ffi::{c_char, c_void, CStr},
-    ptr,
-};
+use std::ffi::{c_void, CStr};
 use vp::*;
-
-fn cstr_opt_ptr(cstr_opt: Option<&CStr>) -> *const c_char {
-    match cstr_opt {
-        Some(cstr) => cstr.as_ptr(),
-        None => ptr::null(),
-    }
-}
 
 /// A wrapper struct that provides access to the vulkan profiles functions.
 #[derive(Clone)]

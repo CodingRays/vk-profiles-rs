@@ -2,6 +2,9 @@
 //!
 //! Many of these functions are copied directly from ash as they are not declared public.
 
+use std::ffi::{c_char, CStr};
+use std::ptr;
+
 use ash::prelude::VkResult;
 use ash::vk;
 
@@ -85,4 +88,12 @@ pub(crate) const fn c_char_array_from_cstr<const N: usize>(
     }
 
     Some(result)
+}
+
+/// Get pointer from inside Option<&CStr>, or return ptr::null() if None
+pub(crate) fn cstr_opt_ptr(cstr_opt: Option<&CStr>) -> *const c_char {
+    match cstr_opt {
+        Some(cstr) => cstr.as_ptr(),
+        None => ptr::null(),
+    }
 }

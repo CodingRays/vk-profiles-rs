@@ -7,29 +7,6 @@ use std::{ffi::c_void, ptr};
 
 const VP_MAX_PROFILE_NAME_SIZE: usize = 256;
 
-// todo: new vulkan_profiles API
-// currently disabled (#ifdef VP_USE_OBJECT)
-// #[repr(transparent)]
-// #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-// pub struct CapabilitiesCreateFlagBits(pub(crate) vk::Flags);
-// ash::vk_bitflags_wrapped!(CapabilitiesCreateFlagBits, vk::Flags);
-
-// impl CapabilitiesCreateFlagBits {
-//     pub const VP_PROFILE_CREATE_STATIC_BIT: Self = Self(1 << 0);
-// }
-
-// #[repr(C)]
-// #[derive(Copy, Clone)]
-// pub struct CapabilitiesCreateInfo {
-//     pub flags: CapabilitiesCreateFlagBits,
-//     pub api_version: u32,
-//     // todo: this should include a list of pointers to the Vulkan library
-//     // see VpVulkanFunctions
-//     // this can probably then work with Ash set to dynamic linking (loaded)
-//     // for now this is just always set to nullptr
-//     pub p_vulkan_functions: *const usize
-// }
-
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct ProfileProperties {
