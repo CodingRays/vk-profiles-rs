@@ -1,19 +1,21 @@
 [package]
 name = "vk-profiles-rs"
-description = "Rust bindings for the vulkan profiles library"
-version = "0.3.1"
+description = "Rust bindings for the Vulkan Profiles library"
+version = "0.4.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/CodingRays/vk-profiles-rs"
 readme = "README.md"
+keywords = ["vulkan", "bindings"]
+categories = ["api-bindings", "external-ffi-bindings"]
 
 [dependencies]
 # The profiles library requires the vulkan loader to be statically linked
-ash = {version=">=0.35.0", features=["linked"]}
+ash = { version = "0.38.0", features = ["linked"] }
 link-cplusplus = "1.0.6"
 
 [build-dependencies]
-cmake = "0.1.48"
+cmake = "0.1.57"
 
 [features]
 default = ["debug"]

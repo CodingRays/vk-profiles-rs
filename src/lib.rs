@@ -4,21 +4,21 @@
 //! ## Examples
 //! ```no_run
 //! use ash::vk;
-//! use vk_profiles_rs::vp;
+//! use vk_profiles_rs::{profiles, vp};
 //!
 //! # fn main() -> ash::prelude::VkResult<()> {
 //! // Load the function pointers
 //! let vk_profiles = vk_profiles_rs::VulkanProfiles::linked();
 //!
-//! // Select the lunarg desktop portability 2021 profile and test instance support
-//! let profile = vp::LunargDesktopPortability2021::profile_properties();
+//! // Select the LunarG minimum Vulkan 1.3 profile and test instance support
+//! let profile = profiles::LunargMinimumRequirements1_3::profile_properties();
 //! assert!(unsafe { vk_profiles.get_instance_profile_support(None, &profile)? });
 //!
-//! let instance_info = vk::InstanceCreateInfo::builder();
-//!
-//! let vp_instance_info = vp::InstanceCreateInfo::builder()
+//! let instance_info = vk::InstanceCreateInfo::default();
+//! let profiles = [profile];
+//! let vp_instance_info = vp::InstanceCreateInfo::default()
 //!     .create_info(&instance_info)
-//!     .profile(&profile);
+//!     .enabled_full_profiles(&profiles);
 //!
 //! let entry = ash::Entry::linked();
 //!
@@ -43,12 +43,13 @@ extern crate link_cplusplus;
 #[doc(hidden)]
 pub mod enum_debugs;
 mod prelude;
+pub mod profiles;
 pub mod vp;
 
 use ash::prelude::VkResult;
 use ash::vk;
 use prelude::*;
-use std::ffi::c_void;
+use std::ffi::{c_void, CStr};
 use vp::*;
 
 /// A wrapper struct that provides access to the vulkan profiles functions.
@@ -58,7 +59,7 @@ pub struct VulkanProfiles {
 }
 
 impl VulkanProfiles {
-    /// Loads the function pointers when the vulkan profiles library is statically 
+    /// Loads the function pointers when the vulkan profiles library is statically
     /// linked (which is currently the only option).
     pub fn linked() -> Self {
         VulkanProfiles {
@@ -71,12 +72,12 @@ impl VulkanProfiles {
         &self.profiles_fn
     }
 
-    /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profiles>
+    /// See <https://vulkan.lunarg.com/doc/view/1.4.335.0/windows/profiles_api_library.html#user-content-query-profiles>
     pub unsafe fn get_profiles(&self) -> VkResult<Vec<ProfileProperties>> {
         read_into_uninitialized_vector(|count, data| (self.profiles_fn.get_profiles)(count, data))
     }
 
-    /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-fallbacks>
+    /// See <https://vulkan.lunarg.com/doc/view/1.4.335.0/windows/profiles_api_library.html#user-content-query-profile-fallbacks>
     pub unsafe fn get_profile_fallbacks(
         &self,
         profile: &ProfileProperties,
@@ -86,27 +87,20 @@ impl VulkanProfiles {
         })
     }
 
-    /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-check-instance-level-support>
+    /// See <https://vulkan.lunarg.com/doc/view/1.4.335.0/windows/profiles_api_library.html#user-content-check-instance-level-support>
     pub unsafe fn get_instance_profile_support(
         &self,
-        layer: Option<&::std::ffi::CStr>,
+        layer: Option<&CStr>,
         profile: &ProfileProperties,
     ) -> VkResult<bool> {
-        let layer = match layer {
-            Some(layer) => layer.as_ptr(),
-            _ => std::ptr::null(),
-        };
+        let layer = cstr_opt_ptr(layer);
 
         let mut supported: vk::Bool32 = 0;
         (self.profiles_fn.get_instance_profile_support)(layer, profile, &mut supported).result()?;
-        if supported == 0 {
-            Ok(false)
-        } else {
-            Ok(true)
-        }
+        Ok(supported == 1)
     }
 
-    /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-create-instance-with-profile>
+    /// See <https://vulkan.lunarg.com/doc/view/1.4.335.0/windows/profiles_api_library.html#user-content-create-instance-with-profile>
     pub unsafe fn create_instance(
         &self,
         entry: &ash::Entry,
@@ -123,7 +117,7 @@ impl VulkanProfiles {
         Ok(ash::Instance::load(entry.static_fn(), instance))
     }
 
-    /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-check-device-level-support>
+    /// See <https://vulkan.lunarg.com/doc/view/1.4.335.0/windows/profiles_api_library.html#user-content-check-device-level-support>
     pub unsafe fn get_physical_device_profile_support(
         &self,
         instance: &ash::Instance,
@@ -145,7 +139,7 @@ impl VulkanProfiles {
         }
     }
 
-    /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-create-device-with-profile>
+    /// See <https://vulkan.lunarg.com/doc/view/1.4.335.0/windows/profiles_api_library.html#user-content-create-device-with-profile>
     pub unsafe fn create_device(
         &self,
         instance: &ash::Instance,
@@ -164,77 +158,106 @@ impl VulkanProfiles {
         Ok(ash::Device::load(instance.fp_v1_0(), device))
     }
 
-    /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-instance-extensions>
+    /// See <https://vulkan.lunarg.com/doc/view/1.4.335.0/windows/profiles_api_library.html#user-content-query-profile-instance-extensions>
     pub unsafe fn get_profile_instance_extension_properties(
         &self,
         profile: &ProfileProperties,
+        block_name: Option<&CStr>,
     ) -> VkResult<Vec<vk::ExtensionProperties>> {
+        let block_name = cstr_opt_ptr(block_name);
         read_into_uninitialized_vector(|count, data| {
-            (self.profiles_fn.get_profile_instance_extension_properties)(profile, count, data)
+            (self.profiles_fn.get_profile_instance_extension_properties)(
+                profile, block_name, count, data,
+            )
         })
     }
 
-    /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-device-extensions>
+    /// See <https://vulkan.lunarg.com/doc/view/1.4.335.0/windows/profiles_api_library.html#user-content-query-profile-device-extensions>
     pub unsafe fn get_profile_device_extension_properties(
         &self,
         profile: &ProfileProperties,
+        block_name: Option<&CStr>,
     ) -> VkResult<Vec<vk::ExtensionProperties>> {
+        let block_name = cstr_opt_ptr(block_name);
         read_into_uninitialized_vector(|count, data| {
-            (self.profiles_fn.get_profile_device_extension_properties)(profile, count, data)
+            (self.profiles_fn.get_profile_device_extension_properties)(
+                profile, block_name, count, data,
+            )
         })
     }
 
     /// Due to how ash's marker traits work the passed features *must* be wrapped in a [`vk::PhysicalDeviceFeatures2`] struct.
-    /// 
-    /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-features>
+    ///
+    /// See <https://vulkan.lunarg.com/doc/view/1.4.335.0/windows/profiles_api_library.html#user-content-query-profile-features>
     pub unsafe fn get_profile_features(
         &self,
         profile: &ProfileProperties,
+        block_name: Option<&CStr>,
         features: &mut vk::PhysicalDeviceFeatures2,
     ) {
-        (self.profiles_fn.get_profile_features)(profile, features as *mut _ as *mut c_void);
+        let block_name = cstr_opt_ptr(block_name);
+        (self.profiles_fn.get_profile_features)(
+            profile,
+            block_name,
+            features as *mut _ as *mut c_void,
+        );
     }
 
-    /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-features>
+    /// See <https://vulkan.lunarg.com/doc/view/1.4.335.0/windows/profiles_api_library.html#user-content-query-profile-features>
     pub unsafe fn get_profile_feature_structure_types(
         &self,
         profile: &ProfileProperties,
+        block_name: Option<&CStr>,
     ) -> VkResult<Vec<vk::StructureType>> {
+        let block_name = cstr_opt_ptr(block_name);
         read_into_uninitialized_vector(|count, data| {
-            (self.profiles_fn.get_profile_feature_structure_types)(profile, count, data)
+            (self.profiles_fn.get_profile_feature_structure_types)(profile, block_name, count, data)
         })
     }
 
     /// Due to how ash's marker traits work the passed properties *must* be wrapped in a [`vk::PhysicalDeviceProperties2`] struct.
-    /// 
-    /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-device-properties>
+    ///
+    /// See <https://vulkan.lunarg.com/doc/view/1.4.335.0/windows/profiles_api_library.html#user-content-query-profile-device-properties>
     pub unsafe fn get_profile_properties(
         &self,
         profile: &ProfileProperties,
+        block_name: Option<&CStr>,
         properties: &mut vk::PhysicalDeviceProperties2,
     ) {
-        (self.profiles_fn.get_profile_properties)(profile, properties as *mut _ as *mut c_void);
+        let block_name = cstr_opt_ptr(block_name);
+        (self.profiles_fn.get_profile_properties)(
+            profile,
+            block_name,
+            properties as *mut _ as *mut c_void,
+        );
     }
 
-    /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-device-properties>
+    /// See <https://vulkan.lunarg.com/doc/view/1.4.335.0/windows/profiles_api_library.html#user-content-query-profile-device-properties>
     pub unsafe fn get_profile_property_structure_types(
         &self,
         profile: &ProfileProperties,
+        block_name: Option<&CStr>,
     ) -> VkResult<Vec<vk::StructureType>> {
+        let block_name = cstr_opt_ptr(block_name);
         read_into_uninitialized_vector(|count, data| {
-            (self.profiles_fn.get_profile_property_structure_types)(profile, count, data)
+            (self.profiles_fn.get_profile_property_structure_types)(
+                profile, block_name, count, data,
+            )
         })
     }
 
-    /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-queue-family-properties>
+    /// See <https://vulkan.lunarg.com/doc/view/1.4.335.0/windows/profiles_api_library.html#user-content-query-profile-queue-family-properties>
     pub unsafe fn get_profile_queue_family_properties(
         &self,
         profile: &ProfileProperties,
+        block_name: Option<&CStr>,
         properties: &mut [vk::QueueFamilyProperties2],
     ) -> VkResult<()> {
+        let block_name = cstr_opt_ptr(block_name);
         let mut count = properties.len() as u32;
         (self.profiles_fn.get_profile_queue_family_properties)(
             profile,
+            block_name,
             &mut count,
             properties.as_mut_ptr(),
         )
@@ -243,79 +266,97 @@ impl VulkanProfiles {
         Ok(())
     }
 
-    /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-queue-family-properties>
+    /// See <https://vulkan.lunarg.com/doc/view/1.4.335.0/windows/profiles_api_library.html#user-content-query-profile-queue-family-properties>
     pub unsafe fn get_profile_queue_family_structure_types(
         &self,
         profile: &ProfileProperties,
+        block_name: Option<&CStr>,
     ) -> VkResult<Vec<vk::StructureType>> {
+        let block_name = cstr_opt_ptr(block_name);
         read_into_uninitialized_vector(|count, data| {
-            (self.profiles_fn.get_profile_queue_family_structure_types)(profile, count, data)
+            (self.profiles_fn.get_profile_queue_family_structure_types)(
+                profile, block_name, count, data,
+            )
         })
     }
 
-    /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-format-properties>
+    /// See <https://vulkan.lunarg.com/doc/view/1.4.335.0/windows/profiles_api_library.html#user-content-query-profile-format-properties>
     pub unsafe fn get_profile_formats(
         &self,
         profile: &ProfileProperties,
+        block_name: Option<&CStr>,
     ) -> VkResult<Vec<vk::Format>> {
+        let block_name = cstr_opt_ptr(block_name);
         read_into_uninitialized_vector(|count, data| {
-            (self.profiles_fn.get_profile_formats)(profile, count, data)
+            (self.profiles_fn.get_profile_formats)(profile, block_name, count, data)
         })
     }
 
-    /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-format-properties>
+    /// See <https://vulkan.lunarg.com/doc/view/1.4.335.0/windows/profiles_api_library.html#user-content-query-profile-format-properties>
     pub unsafe fn get_profile_format_properties(
         &self,
         profile: &ProfileProperties,
+        block_name: Option<&CStr>,
         format: vk::Format,
         p_next: &mut vk::BaseOutStructure,
     ) {
+        let block_name = cstr_opt_ptr(block_name);
         (self.profiles_fn.get_profile_format_properties)(
             profile,
+            block_name,
             format,
             p_next as *mut _ as *mut c_void,
         );
     }
 
-    /// See <https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_api_library.html#user-content-query-profile-format-properties>
+    /// See <https://vulkan.lunarg.com/doc/view/1.4.335.0/windows/profiles_api_library.html#user-content-query-profile-format-properties>
     pub unsafe fn get_profile_format_structure_types(
         &self,
         profile: &ProfileProperties,
+        block_name: Option<&CStr>,
     ) -> VkResult<Vec<vk::StructureType>> {
+        let block_name = cstr_opt_ptr(block_name);
         read_into_uninitialized_vector(|count, data| {
-            (self.profiles_fn.get_profile_format_structure_types)(profile, count, data)
+            (self.profiles_fn.get_profile_format_structure_types)(profile, block_name, count, data)
         })
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::profiles;
     use crate::vp;
     use crate::VulkanProfiles;
     use ash::vk;
 
-    fn create_instance(profiles: &VulkanProfiles) -> (vp::ProfileProperties, ash::Instance) {
-        let profile = vp::LunargDesktopPortability2021::profile_properties();
-        assert!(unsafe {
-            profiles
-                .get_instance_profile_support(None, &profile)
-                .unwrap()
-        });
+    fn create_instance(
+        entry: &ash::Entry,
+        vk_profiles: &VulkanProfiles,
+    ) -> ([vp::ProfileProperties; 2], ash::Instance) {
+        let profiles = [
+            profiles::KhrRoadmap2024::profile_properties(),
+            profiles::LunargMinimumRequirements1_3::profile_properties(),
+        ];
+        for profile in profiles {
+            assert!(unsafe {
+                vk_profiles
+                    .get_instance_profile_support(None, &profile)
+                    .unwrap()
+            });
+        }
 
-        let entry = ash::Entry::linked();
-
-        let instance_info = vk::InstanceCreateInfo::builder();
-        let vp_instance_info = vp::InstanceCreateInfo::builder()
-            .create_info(&instance_info)
-            .profile(&profile);
+        let instance_info = vk::InstanceCreateInfo::default();
+        let vp_instance_info = vp::InstanceCreateInfo::default()
+            .enabled_full_profiles(&profiles)
+            .create_info(&instance_info);
 
         let instance = unsafe {
-            profiles
-                .create_instance(&entry, &vp_instance_info, None)
+            vk_profiles
+                .create_instance(entry, &vp_instance_info, None)
                 .unwrap()
         };
 
-        (profile, instance)
+        (profiles, instance)
     }
 
     #[test]
@@ -344,44 +385,52 @@ mod tests {
     fn test_enumerate_profile_details() {
         let vk_profiles = VulkanProfiles::linked();
 
-        let profile = unsafe { vk_profiles.get_profiles().unwrap() }[0];
+        let profiles = unsafe { vk_profiles.get_profiles().unwrap() };
+        let block_name = None;
 
-        unsafe {
-            vk_profiles
-                .get_profile_instance_extension_properties(&profile)
-                .unwrap()
-        };
-        unsafe {
-            vk_profiles
-                .get_profile_device_extension_properties(&profile)
-                .unwrap()
-        };
-        unsafe {
-            vk_profiles
-                .get_profile_feature_structure_types(&profile)
-                .unwrap()
-        };
-        unsafe {
-            vk_profiles
-                .get_profile_property_structure_types(&profile)
-                .unwrap()
-        };
-        unsafe {
-            vk_profiles
-                .get_profile_queue_family_structure_types(&profile)
-                .unwrap()
-        };
-        unsafe { vk_profiles.get_profile_formats(&profile).unwrap() };
-        unsafe {
-            vk_profiles
-                .get_profile_property_structure_types(&profile)
-                .unwrap()
-        };
+        for profile in profiles {
+            unsafe {
+                vk_profiles
+                    .get_profile_instance_extension_properties(&profile, block_name)
+                    .unwrap()
+            };
+            unsafe {
+                vk_profiles
+                    .get_profile_device_extension_properties(&profile, block_name)
+                    .unwrap()
+            };
+            unsafe {
+                vk_profiles
+                    .get_profile_feature_structure_types(&profile, block_name)
+                    .unwrap()
+            };
+            unsafe {
+                vk_profiles
+                    .get_profile_property_structure_types(&profile, block_name)
+                    .unwrap()
+            };
+            unsafe {
+                vk_profiles
+                    .get_profile_queue_family_structure_types(&profile, block_name)
+                    .unwrap()
+            };
+            unsafe {
+                vk_profiles
+                    .get_profile_formats(&profile, block_name)
+                    .unwrap()
+            };
+            unsafe {
+                vk_profiles
+                    .get_profile_property_structure_types(&profile, block_name)
+                    .unwrap()
+            };
+        }
     }
 
     #[test]
     fn test_create_instance() {
-        let (_, instance) = create_instance(&VulkanProfiles::linked());
+        let entry = ash::Entry::linked();
+        let (_, instance) = create_instance(&entry, &VulkanProfiles::linked());
 
         unsafe { instance.destroy_instance(None) };
     }
@@ -389,8 +438,9 @@ mod tests {
     #[test]
     fn test_create_device() {
         let vk_profiles = VulkanProfiles::linked();
+        let entry = ash::Entry::linked();
 
-        let (profile, instance) = create_instance(&vk_profiles);
+        let (profiles, instance) = create_instance(&entry, &vk_profiles);
 
         let physical_device = unsafe { instance.enumerate_physical_devices().unwrap() }
             .into_iter()
@@ -399,25 +449,38 @@ mod tests {
                 println!("PhysicalDevice: {:?}", unsafe {
                     std::ffi::CStr::from_ptr(props.device_name.as_ptr())
                 });
-                unsafe {
-                    vk_profiles
-                        .get_physical_device_profile_support(&instance, *device, &profile)
-                        .expect("Error queueing physical device support")
+                let mut unsupported = false;
+                for profile in profiles {
+                    let supports_this = unsafe {
+                        vk_profiles
+                            .get_physical_device_profile_support(&instance, *device, &profile)
+                            .expect("Error queueing physical device support")
+                    };
+                    if !supports_this {
+                        unsupported = true;
+                        break;
+                    }
                 }
+                !unsupported
             })
             .expect("Failed to find suitable physical device");
 
-        let queue_info = vk::DeviceQueueCreateInfo::builder()
-            .queue_family_index(0)
-            .queue_priorities(&[1.0]);
+        let queue_priorities: [f32; 1] = [1.0];
+        let queue_info = vk::DeviceQueueCreateInfo {
+            queue_family_index: 0,
+            p_queue_priorities: queue_priorities.as_ptr(),
+            ..Default::default()
+        };
 
-        let device_info =
-            vk::DeviceCreateInfo::builder().queue_create_infos(std::slice::from_ref(&queue_info));
+        let device_info = vk::DeviceCreateInfo {
+            p_queue_create_infos: std::ptr::addr_of!(queue_info),
+            ..Default::default()
+        };
 
-        let vp_device_info = vp::DeviceCreateInfo::builder()
+        let vp_device_info = vp::DeviceCreateInfo::default()
+            .enabled_full_profiles(&profiles)
             .create_info(&device_info)
-            .profile(&profile);
-
+            .flags(vp::DeviceCreateFlagBits::DISABLE_ROBUST_ACCESS);
         let device = unsafe {
             vk_profiles
                 .create_device(&instance, physical_device, &vp_device_info, None)

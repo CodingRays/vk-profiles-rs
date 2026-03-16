@@ -1,9 +1,12 @@
 //! These are useful utility functions.
-//! 
+//!
 //! Many of these functions are copied directly from ash as they are not declared public.
 
-use ash::vk;
+use std::ffi::{c_char, CStr};
+use std::ptr;
+
 use ash::prelude::VkResult;
+use ash::vk;
 
 /// This is a direct copy from ash::prelude (because it is not public).
 ///
@@ -65,11 +68,12 @@ pub(crate) fn debug_flags<Value: Into<u64> + Copy>(
     Ok(())
 }
 
-
 /// Creates a fixed size c_char array from a CStr.
-/// 
+///
 /// If the size of the string is too large for the array None is returned.
-pub(crate) fn c_char_array_from_cstr<const N: usize>(data: &::std::ffi::CStr) -> Option<[::std::os::raw::c_char; N]> {
+pub(crate) const fn c_char_array_from_cstr<const N: usize>(
+    data: &::std::ffi::CStr,
+) -> Option<[::std::os::raw::c_char; N]> {
     let mut result: [::std::os::raw::c_char; N] = unsafe { ::std::mem::zeroed() }; // Default not implemented for arbitrary length
 
     // Yes this is stupid but rust FFI is absolutely useless
@@ -77,10 +81,19 @@ pub(crate) fn c_char_array_from_cstr<const N: usize>(data: &::std::ffi::CStr) ->
     if data.len() > N {
         return None;
     }
+    let data_ptr = data.as_ptr() as *const ::std::os::raw::c_char;
 
-    for (i, c) in data.iter().enumerate() {
-        result[i] = *c as ::std::os::raw::c_char;
+    unsafe {
+        std::ptr::copy_nonoverlapping(data_ptr, result.as_mut_ptr(), data.len());
     }
 
     Some(result)
+}
+
+/// Get pointer from inside Option<&CStr>, or return ptr::null() if None
+pub(crate) fn cstr_opt_ptr(cstr_opt: Option<&CStr>) -> *const c_char {
+    match cstr_opt {
+        Some(cstr) => cstr.as_ptr(),
+        None => ptr::null(),
+    }
 }
