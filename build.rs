@@ -16,5 +16,5 @@ fn main() {
     println!("cargo:rustc-link-search=native={}", dst.display());
     println!("cargo:rustc-link-lib=static=vkprofiles");
 
-    println!("cargo::rerun-if-changed=Vulkan-Profiles/library/source/vulkan_profiles.cpp");
+    println!("cargo::rerun-if-changed=Vulkan-Profiles/CMakeLists.txt");
 }
