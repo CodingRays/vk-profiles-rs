@@ -37,7 +37,12 @@ fn main() {
     let dst = cmake::Config::new(".")
         .define(
             "VK_PROFILES_SRC_DIR",
-            profiles_dir.canonicalize().unwrap()
+            profiles_dir
+                .canonicalize()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .replace('\\', "/"),
         )
         .generator("Ninja")
         .build();
