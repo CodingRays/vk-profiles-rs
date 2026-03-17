@@ -14,17 +14,18 @@ fn main() {
     // OUT_DIR.
     let repo = match git2::Repository::open(&profiles_dir) {
         Ok(repo) => repo,
-        Err(_) => {
-            git2::Repository::clone(
-                "https://github.com/KhronosGroup/Vulkan-Profiles.git", 
-                &profiles_dir
-            ).expect("Failed to clone Vulkan-Profiles repository")
-        }
+        Err(_) => git2::Repository::clone(
+            "https://github.com/KhronosGroup/Vulkan-Profiles.git",
+            &profiles_dir,
+        )
+        .expect("Failed to clone Vulkan-Profiles repository"),
     };
 
     let object = repo.revparse_single(VULKAN_PROFILES_COMMIT).unwrap();
-    repo.checkout_tree(&object, None).expect("Failed to checkout Vulkan-Profiles");
-    repo.set_head_detached(object.id()).expect("Failed to update Vulkan-Profiles HEAD");
+    repo.checkout_tree(&object, None)
+        .expect("Failed to checkout Vulkan-Profiles");
+    repo.set_head_detached(object.id())
+        .expect("Failed to update Vulkan-Profiles HEAD");
 
     // generate the Vulkan-Profiles c++ files and headers
     cmake::Config::new(&profiles_dir)
