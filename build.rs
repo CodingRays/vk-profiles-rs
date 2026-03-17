@@ -39,4 +39,6 @@ fn main() {
     // link the library
     println!("cargo:rustc-link-search=native={}", dst.display());
     println!("cargo:rustc-link-lib=static=vkprofiles");
+
+    println!("cargo::rerun-if-changed=CMakeLists.txt");
 }
