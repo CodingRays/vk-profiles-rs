@@ -3,6 +3,12 @@ fn main() {}
 
 const VULKAN_PROFILES_COMMIT: &'static str = "0fccc7ba443a4611873ad3ad165bda5e074de344";
 
+fn path_to_cmake(path: &std::path::PathBuf) -> String {
+    let p = path.canonicalize().unwrap();
+    let p = p.to_str().unwrap();
+    p.strip_prefix(r"\\?\").unwrap_or(p).replace('\\', "/")
+}
+
 #[cfg(not(feature = "docs-rs"))]
 fn main() {
     let out_dir = std::env::var("OUT_DIR").unwrap();
@@ -30,11 +36,13 @@ fn main() {
     // generate the Vulkan-Profiles c++ files and headers
     cmake::Config::new(&profiles_dir)
         .define("UPDATE_DEPS", "ON")
+        .generator("Ninja")
         .build();
 
     // compile and add the files as a library
     let dst = cmake::Config::new(".")
-        .define("VK_PROFILES_SRC_DIR", &profiles_dir)
+        .define("VK_PROFILES_SRC_DIR", path_to_cmake(&profiles_dir))
+        .generator("Ninja")
         .build();
 
     // link the library
