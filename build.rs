@@ -35,7 +35,10 @@ fn main() {
 
     // compile and add the files as a library
     let dst = cmake::Config::new(".")
-        .define("VK_PROFILES_SRC_DIR", &profiles_dir)
+        .define(
+            "VK_PROFILES_SRC_DIR",
+            &format!("{}", profiles_dir.display()),
+        )
         .generator("Ninja")
         .build();
 
