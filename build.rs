@@ -30,11 +30,13 @@ fn main() {
     // generate the Vulkan-Profiles c++ files and headers
     cmake::Config::new(&profiles_dir)
         .define("UPDATE_DEPS", "ON")
+        .generator("Ninja")
         .build();
 
     // compile and add the files as a library
     let dst = cmake::Config::new(".")
         .define("VK_PROFILES_SRC_DIR", &profiles_dir)
+        .generator("Ninja")
         .build();
 
     // link the library
